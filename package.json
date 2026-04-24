@@ -1,0 +1,27 @@
+{
+  "name": "synergyhack",
+  "version": "1.0.0",
+  "description": "A complementarity-based hackathon teammate matcher.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Evelynval-w/synergyhack.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Evelynval-w/synergyhack/issues"
+  },
+  "homepage": "https://github.com/Evelynval-w/synergyhack#readme",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "neo4j-driver": "^6.0.1"
+  }
+}
