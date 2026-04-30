@@ -2,6 +2,7 @@
 //
 // Express server entry point.
 
+const cors = require('cors');
 const express = require('express');
 require('dotenv').config({ path: '../.env' });
 
@@ -10,6 +11,8 @@ const redis = require('./db/redis');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
+app.use(cors());
 app.use(express.json());
 
 // === Rate limiter (applies to all routes) ===
@@ -21,11 +24,13 @@ const authRoutes = require('./routes/auth.routes');
 const heartbeatRoutes = require('./routes/heartbeat.routes');
 const messageRoutes = require('./routes/messages.routes');
 const matchRoutes = require('./routes/matches.routes');
+const teamRoutes = require('./routes/teams.routes');
 
 app.use('/auth', authRoutes);
 app.use('/heartbeat', heartbeatRoutes);
 app.use('/teams', messageRoutes);     // mounts /teams/:id/messages
 app.use('/teams', matchRoutes);       // mounts /teams/:id/matches
+app.use('/teams', teamRoutes);
 
 // === Health check ===
 app.get('/health', async (req, res) => {
