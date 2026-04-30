@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
     "seed": "node scripts/seed.js",
     "seed:reset": "node scripts/seed.js"
+
   },
   "dependencies": {
     "dotenv": "^17.4.2",
@@ -14,4 +14,5 @@
     "neo4j-driver": "^6.0.1",
     "redis": "^4.7.1"
   }
+
 }
