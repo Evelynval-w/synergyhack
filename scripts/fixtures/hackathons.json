@@ -1,0 +1,48 @@
+
+[
+  {
+    "_id": "660000000000000000000001",
+    "name": "VivaTech 2026",
+    "startDate": "2026-06-17",
+    "endDate": "2026-06-20",
+    "tracks": ["AI", "Web3", "Health", "Climate"],
+    "description": "Europe's largest startup event with a hackathon track.",
+    "location": "Paris, France"
+  },
+  {
+    "_id": "660000000000000000000002",
+    "name": "AMD Developer Hackathon",
+    "startDate": "2026-05-04",
+    "endDate": "2026-05-10",
+    "tracks": ["AI Agents", "Dev Tools"],
+    "description": "Build AI agents with AMD hardware.",
+    "location": "Online"
+  },
+  {
+    "_id": "660000000000000000000003",
+    "name": "ETHGlobal Cannes",
+    "startDate": "2026-07-15",
+    "endDate": "2026-07-17",
+    "tracks": ["DeFi", "Infrastructure", "Social"],
+    "description": "Ethereum-focused hackathon on the French Riviera.",
+    "location": "Cannes, France"
+  },
+  {
+    "_id": "660000000000000000000004",
+    "name": "Hackathon Nationale EPITA",
+    "startDate": "2026-03-10",
+    "endDate": "2026-03-12",
+    "tracks": ["Education", "Healthcare"],
+    "description": "Student-focused national hackathon.",
+    "location": "Paris, France"
+  },
+  {
+    "_id": "660000000000000000000005",
+    "name": "Station F 48h",
+    "startDate": "2026-09-05",
+    "endDate": "2026-09-07",
+    "tracks": ["Startups", "Sustainability"],
+    "description": "Fast-paced 48-hour build at Station F.",
+    "location": "Paris, France"
+  }
+]
