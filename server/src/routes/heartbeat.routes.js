@@ -15,3 +15,8 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 module.exports = router;
+
+router.get('/online', async (req, res) => {
+  const users = await client.sMembers('online:users');
+  res.json(users);
+});
