@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "seed": "node scripts/seed.js",
+    "seed:reset": "node scripts/seed.js"
+
   },
   "keywords": [],
   "author": "",
@@ -13,4 +15,5 @@
     "dotenv": "^17.4.2",
     "neo4j-driver": "^6.0.1"
   }
+
 }
