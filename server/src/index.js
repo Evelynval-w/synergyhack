@@ -42,10 +42,14 @@ app.get('/', (req, res) => {
 });
 
 // === Start ===
+const mongo = require('./db/mongo');
+
 async function start() {
   try {
     await redis.connect();
     console.log('Connected to Redis');
+    await mongo.connect();
+    console.log('Connected to MongoDB');
     app.listen(PORT, () => {
       console.log(`Server listening on http://localhost:${PORT}`);
     });
@@ -54,5 +58,6 @@ async function start() {
     process.exit(1);
   }
 }
+
 
 start();
