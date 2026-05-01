@@ -7,7 +7,9 @@
 // Run with: node scripts/seed-neo4j.js
 // Idempotent via MERGE.
 
-require('dotenv').config();
+require('dotenv').config({
+  path: require('path').join(__dirname, '..', '.env'),
+});
 const fs = require('fs');
 const path = require('path');
 const { session, verifyConnection, close } = require('../server/src/db/neo4j');

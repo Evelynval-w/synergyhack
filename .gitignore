@@ -35,3 +35,14 @@ coverage/
 
 # OS
 Thumbs.db
+
+# Local environment backups
+.env.bak
+
+# Vite cache
+client/.vite/
+
+# Accidental root npm artifacts
+/package.json
+/package-lock.json
+/node_modules/

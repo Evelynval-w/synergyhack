@@ -35,25 +35,35 @@ async function seedSkills() {
 }
 
 /**
- * Inserts every COMPLEMENTS edge from complements.json. Stored as a
- * directed edge from -> to, but the match query traverses undirected.
- * Idempotent.
+ * Inserts every COMPLEMENTS edge from complements.json.
+ *
+ * Each JSON entry { from, to, strength } produces TWO directed edges in the
+ * graph: one from -> to and one to -> from, both with the same strength.
+ * This lets the match query traverse complementarity directionally
+ * (per professor's spec) while still capturing the symmetric meaning of
+ * "these two skills complement each other."
+ *
+ * Idempotent via MERGE.
  */
 async function seedComplements() {
+  const edges = complementsData.complements;
+  let count = 0;
+
   const s = session();
   try {
-    for (const c of complementsData.complements) {
+    for (const edge of edges) {
       await s.run(
-        `
-        MATCH (a:Skill {name: $from})
-        MATCH (b:Skill {name: $to})
-        MERGE (a)-[r:COMPLEMENTS]->(b)
-        SET r.strength = $strength
-        `,
-        { from: c.from, to: c.to, strength: c.strength }
+        `MATCH (a:Skill {name: $from})
+         MATCH (b:Skill {name: $to})
+         MERGE (a)-[r1:COMPLEMENTS]->(b)
+         SET r1.strength = $strength
+         MERGE (b)-[r2:COMPLEMENTS]->(a)
+         SET r2.strength = $strength`,
+        { from: edge.from, to: edge.to, strength: edge.strength }
       );
+      count += 2;
     }
-    return complementsData.complements.length;
+    return count;
   } finally {
     await s.close();
   }

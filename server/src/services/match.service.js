@@ -1,73 +1,64 @@
-// The gap-coverage match algorithm — the heart of SynergyHack.
-//
-// Given a team, returns the top 20 candidates ranked by how much
-// they'd expand the team's skill coverage via COMPLEMENTS edges.
-//
-// After Neo4j returns candidate IDs with scores, we hydrate with
-// Mongo (name, bio, avatar) in one $in query — typical polyglot
-// persistence pattern.
-
-
 // server/src/services/match.service.js
 //
 // The gap-coverage match algorithm — the heart of SynergyHack.
 //
-// Given a team, returns the top 20 candidates ranked by how much
-// they'd expand the team's skill coverage via COMPLEMENTS edges.
+// Per professor's spec:
+//   (Team)<-[:MEMBER_OF]-(member)-[:HAS_SKILL]->(teamSkill)
+//   (candidate)-[:HAS_SKILL]->(candidateSkill)-[:COMPLEMENTS]->(teamSkill)
 //
-// After Neo4j returns candidate IDs with scores, we hydrate with
-// Mongo (name, bio, avatar) in one $in query — typical polyglot
-// persistence pattern.
+// The candidate's contributing skill must NOT already be a team skill
+// (otherwise it's not filling a gap). The COMPLEMENTS edge is traversed
+// directionally from candidateSkill to teamSkill.
+//
+// After Neo4j returns candidate IDs with scores, we hydrate with Mongo
+// (name, bio, avatar, skills) — typical polyglot persistence pattern.
 
 const { session } = require('../db/neo4j');
+const { db } = require('../db/mongo');
 
-// commented out in other to stub the mangodb connection
-// const { db } = require('../db/mongo');
-//
-// const { ObjectId } = require('mongodb');
-
-//
 /**
  * Finds candidates who complement a team's existing skills.
  *
  * Walking the query:
- *   1. Find the team and all its current members' skills.
- *   2. Find all users NOT already on the team (candidates).
- *   3. For each candidate, find their skills.
- *   4. For each candidate skill, follow COMPLEMENTS edges to team skills.
- *   5. Sum the COMPLEMENTS strengths per candidate.
- *   6. Return top 20 by that sum.
+ *   1. Find the team and collect its current skill set (teamSkills).
+ *   2. Find users NOT on the team who have skills NOT already in teamSkills.
+ *      These "new skills" are the only ones eligible to score.
+ *   3. For each new skill, follow COMPLEMENTS -> to a team skill.
+ *   4. Sum the COMPLEMENTS strengths per candidate.
+ *   5. Filter to candidates with non-zero score.
+ *   6. Return top N by that sum.
  */
 async function findMatches(teamId, { limit = 20 } = {}) {
   const s = session();
   try {
     const result = await s.run(
       `
-      // 1. Get the team and collect its current skill coverage
+      // 1. Collect the team's existing skills
       MATCH (t:Team {id: $teamId})<-[:MEMBER_OF]-(m:User)-[:HAS_SKILL]->(ts:Skill)
       WITH t, collect(DISTINCT ts) AS teamSkills
 
-      // 2. Find candidates — users NOT on the team
+      // 2. Candidates: not on team, with skills the team does NOT have
       MATCH (c:User)-[:HAS_SKILL]->(cs:Skill)
       WHERE NOT (c)-[:MEMBER_OF]->(t)
+        AND NOT cs IN teamSkills
 
-      // 3. Follow COMPLEMENTS edges (both directions) to team skills
-      OPTIONAL MATCH (cs)-[r:COMPLEMENTS]-(x:Skill)
+      // 3. Follow directed COMPLEMENTS to a team skill
+      OPTIONAL MATCH (cs)-[r:COMPLEMENTS]->(x:Skill)
       WHERE x IN teamSkills
 
-      // 4. Sum the strengths per candidate
+      // 4. Sum strengths per candidate
       WITH c,
            sum(coalesce(r.strength, 0)) AS gapCoverage,
-           count(DISTINCT cs) AS candidateSkillCount
+           count(DISTINCT cs) AS candidateNewSkillCount
 
-      // 5. Only keep candidates with non-zero score
+      // 5. Only candidates who actually fill a gap
       WHERE gapCoverage > 0
 
       // 6. Top N
       RETURN c.id AS userId,
              c.username AS username,
              gapCoverage,
-             candidateSkillCount
+             candidateNewSkillCount
       ORDER BY gapCoverage DESC
       LIMIT toInteger($limit)
       `,
@@ -78,9 +69,9 @@ async function findMatches(teamId, { limit = 20 } = {}) {
       userId: r.get('userId'),
       username: r.get('username'),
       gapCoverage: r.get('gapCoverage'),
-      skillCount: r.get('candidateSkillCount').toNumber
-        ? r.get('candidateSkillCount').toNumber()
-        : r.get('candidateSkillCount'),
+      skillCount: r.get('candidateNewSkillCount').toNumber
+        ? r.get('candidateNewSkillCount').toNumber()
+        : r.get('candidateNewSkillCount'),
     }));
   } finally {
     await s.close();
@@ -93,20 +84,15 @@ async function findMatches(teamId, { limit = 20 } = {}) {
  */
 async function hydrateMatches(matches) {
   if (matches.length === 0) return [];
-  // Lazy-load — match.service can be used without mongo (e.g. for tests)
-  const { db } = require('../db/mongo');
-  const { ObjectId } = require('mongodb');
 
-  const ids = matches.map(m => {
-    try { return new ObjectId(m.userId); } catch { return null; }
-  }).filter(Boolean);
+  const ids = matches.map(m => m.userId);
 
   const profiles = await db().collection('users').find(
     { _id: { $in: ids } },
     { projection: { passwordHash: 0 } }
   ).toArray();
 
-  const profileMap = new Map(profiles.map(p => [p._id.toString(), p]));
+  const profileMap = new Map(profiles.map(p => [String(p._id), p]));
 
   return matches.map(m => ({
     ...m,
@@ -115,9 +101,11 @@ async function hydrateMatches(matches) {
 }
 
 /**
- * Returns, for a given candidate and team, the specific skills that
- * drove their gap-coverage score. Used by the frontend to explain
- * why a candidate is a good fit.
+ * Returns, for a given candidate and team, the specific skill pairs
+ * that drove their gap-coverage score. Used by the frontend explain modal.
+ *
+ * Same constraints as findMatches: candidate skill must be a NEW skill
+ * (not already a team skill), and edges are directed candidateSkill -> teamSkill.
  */
 async function matchExplanation(candidateId, teamId) {
   const s = session();
@@ -126,8 +114,13 @@ async function matchExplanation(candidateId, teamId) {
       `
       MATCH (t:Team {id: $teamId})<-[:MEMBER_OF]-(:User)-[:HAS_SKILL]->(ts:Skill)
       WITH t, collect(DISTINCT ts) AS teamSkills
-      MATCH (c:User {id: $candidateId})-[:HAS_SKILL]->(cs:Skill)-[r:COMPLEMENTS]-(x:Skill)
+
+      MATCH (c:User {id: $candidateId})-[:HAS_SKILL]->(cs:Skill)
+      WHERE NOT cs IN teamSkills
+
+      MATCH (cs)-[r:COMPLEMENTS]->(x:Skill)
       WHERE x IN teamSkills
+
       RETURN cs.name AS candidateSkill,
              x.name AS teamSkill,
              r.strength AS strength

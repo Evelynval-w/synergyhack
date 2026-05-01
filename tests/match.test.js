@@ -26,14 +26,20 @@ async function setupFixtures() {
 
     // Set up the COMPLEMENTS edges
     await s.run(`
-      MATCH (nodeJs:Skill {name: 'Node.js'})
-      MATCH (design:Skill {name: 'UI Design'})
-      MATCH (figma:Skill {name: 'Figma'})
-      MERGE (nodeJs)-[r:COMPLEMENTS]-(design)
-      SET r.strength = 0.9
-      MERGE (design)-[r2:COMPLEMENTS]-(figma)
-      SET r2.strength = 0.8
-    `);
+  MATCH (nodeJs:Skill {name: 'Node.js'})
+  MATCH (design:Skill {name: 'UI Design'})
+  MATCH (figma:Skill {name: 'Figma'})
+
+  MERGE (nodeJs)-[r1:COMPLEMENTS]->(design)
+  SET r1.strength = 0.9
+  MERGE (design)-[r2:COMPLEMENTS]->(nodeJs)
+  SET r2.strength = 0.9
+
+  MERGE (design2:Skill {name: 'UI Design'})-[r3:COMPLEMENTS]->(figma2:Skill {name: 'Figma'})
+  SET r3.strength = 0.8
+  MERGE (figma3:Skill {name: 'Figma'})-[r4:COMPLEMENTS]->(design3:Skill {name: 'UI Design'})
+  SET r4.strength = 0.8
+`);
 
     // Set up team + members + candidates
     await s.run(`
