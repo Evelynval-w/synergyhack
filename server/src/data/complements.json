@@ -1,0 +1,161 @@
+{
+  "_comment": "Hand-curated skill complementarity weights. strength: 0.0 (redundant) to 1.0 (essential pairing). Each pair below is seeded as TWO directed COMPLEMENTS edges (A->B and B->A) so the match query — which uses directed traversal — finds them regardless of which side is the candidate vs team skill. Strengths follow a rough rubric: 0.95 = essential pairing (e.g. React + UI Design), 0.85-0.90 = strong, 0.70-0.80 = useful, 0.15-0.30 = same-role substitutes (e.g. React vs Vue) where having both adds little.",
+
+  "complements": [
+    { "from": "React", "to": "UI Design",     "strength": 0.95 },
+    { "from": "React", "to": "Node.js",       "strength": 0.85 },
+    { "from": "React", "to": "REST APIs",     "strength": 0.80 },
+    { "from": "React", "to": "TypeScript",    "strength": 0.70 },
+    { "from": "React", "to": "Figma",         "strength": 0.75 },
+    { "from": "React", "to": "Vue",           "strength": 0.15 },
+
+    { "from": "Vue", "to": "UI Design",       "strength": 0.95 },
+    { "from": "Vue", "to": "Node.js",         "strength": 0.85 },
+    { "from": "Vue", "to": "REST APIs",       "strength": 0.80 },
+
+    { "from": "Vue.js", "to": "UI Design",    "strength": 0.95 },
+    { "from": "Vue.js", "to": "Node.js",      "strength": 0.85 },
+
+    { "from": "Next.js", "to": "React",       "strength": 0.85 },
+    { "from": "Next.js", "to": "UI Design",   "strength": 0.95 },
+    { "from": "Next.js", "to": "Node.js",     "strength": 0.80 },
+
+    { "from": "Angular", "to": "TypeScript",  "strength": 0.95 },
+    { "from": "Angular", "to": "REST APIs",   "strength": 0.85 },
+    { "from": "Angular", "to": "UI Design",   "strength": 0.85 },
+
+    { "from": "JavaScript", "to": "Node.js",  "strength": 0.85 },
+    { "from": "JavaScript", "to": "React",    "strength": 0.85 },
+    { "from": "JavaScript", "to": "CSS",      "strength": 0.70 },
+
+    { "from": "HTML", "to": "CSS",            "strength": 0.95 },
+    { "from": "HTML", "to": "JavaScript",     "strength": 0.90 },
+
+    { "from": "Tailwind CSS", "to": "React",  "strength": 0.85 },
+    { "from": "Tailwind CSS", "to": "UI Design", "strength": 0.90 },
+    { "from": "Tailwind CSS", "to": "CSS",    "strength": 0.85 },
+
+    { "from": "SASS", "to": "CSS",            "strength": 0.95 },
+    { "from": "Bootstrap", "to": "CSS",       "strength": 0.85 },
+    { "from": "GSAP", "to": "UI Design",      "strength": 0.80 },
+
+    { "from": "Node.js", "to": "PostgreSQL",  "strength": 0.90 },
+    { "from": "Node.js", "to": "MongoDB",     "strength": 0.85 },
+    { "from": "Node.js", "to": "Redis",       "strength": 0.70 },
+    { "from": "Node.js", "to": "Docker",      "strength": 0.75 },
+
+    { "from": "Express", "to": "Node.js",     "strength": 0.95 },
+    { "from": "Express", "to": "MongoDB",     "strength": 0.85 },
+
+    { "from": "NestJS", "to": "TypeScript",   "strength": 0.95 },
+    { "from": "NestJS", "to": "Node.js",      "strength": 0.90 },
+
+    { "from": "MERN", "to": "React",          "strength": 0.85 },
+    { "from": "MERN", "to": "MongoDB",        "strength": 0.85 },
+
+    { "from": "JWT", "to": "Node.js",         "strength": 0.75 },
+    { "from": "JWT", "to": "REST APIs",       "strength": 0.85 },
+
+    { "from": "Python", "to": "Data Analysis","strength": 0.95 },
+    { "from": "Python", "to": "Machine Learning", "strength": 0.95 },
+    { "from": "Python", "to": "PostgreSQL",   "strength": 0.85 },
+    { "from": "Python", "to": "REST APIs",    "strength": 0.80 },
+
+    { "from": "Flask", "to": "Python",        "strength": 0.95 },
+    { "from": "Flask", "to": "PostgreSQL",    "strength": 0.80 },
+    { "from": "Flask", "to": "REST APIs",     "strength": 0.85 },
+
+    { "from": "Java", "to": "PostgreSQL",     "strength": 0.85 },
+    { "from": "Java", "to": "REST APIs",      "strength": 0.80 },
+    { "from": "Java", "to": "Android",        "strength": 0.85 },
+
+    { "from": "Spring Boot", "to": "Java",    "strength": 0.95 },
+    { "from": "Spring Boot", "to": "PostgreSQL", "strength": 0.85 },
+
+    { "from": "Rust", "to": "Docker",         "strength": 0.70 },
+
+    { "from": "Machine Learning", "to": "Data Analysis", "strength": 0.85 },
+    { "from": "Machine Learning", "to": "Python",        "strength": 0.95 },
+
+    { "from": "PyTorch", "to": "Machine Learning", "strength": 0.95 },
+    { "from": "PyTorch", "to": "Python",      "strength": 0.85 },
+    { "from": "TensorFlow", "to": "Machine Learning", "strength": 0.95 },
+    { "from": "TensorFlow", "to": "Python",   "strength": 0.85 },
+    { "from": "Scikit-learn", "to": "Machine Learning", "strength": 0.90 },
+    { "from": "Scikit-learn", "to": "Python", "strength": 0.85 },
+    { "from": "Hugging Face", "to": "Machine Learning", "strength": 0.90 },
+    { "from": "Hugging Face", "to": "Python", "strength": 0.80 },
+
+    { "from": "Pandas", "to": "Data Analysis","strength": 0.95 },
+    { "from": "Pandas", "to": "Python",       "strength": 0.85 },
+
+    { "from": "OpenCV", "to": "Python",       "strength": 0.80 },
+    { "from": "OpenCV", "to": "Machine Learning", "strength": 0.80 },
+
+    { "from": "Apache Spark", "to": "Data Analysis", "strength": 0.85 },
+    { "from": "Apache Spark", "to": "Python", "strength": 0.75 },
+
+    { "from": "Airflow", "to": "Python",      "strength": 0.80 },
+
+    { "from": "Power BI", "to": "Data Analysis", "strength": 0.85 },
+
+    { "from": "SQL", "to": "PostgreSQL",      "strength": 0.85 },
+    { "from": "SQL", "to": "MySQL",           "strength": 0.85 },
+    { "from": "SQL", "to": "Data Analysis",   "strength": 0.80 },
+    { "from": "MySQL", "to": "REST APIs",     "strength": 0.75 },
+
+    { "from": "UI Design", "to": "Figma",     "strength": 0.85 },
+    { "from": "UI Design", "to": "UX Research","strength": 0.90 },
+    { "from": "UI Design", "to": "CSS",       "strength": 0.80 },
+
+    { "from": "Adobe XD", "to": "UI Design",  "strength": 0.95 },
+    { "from": "Adobe XD", "to": "Figma",      "strength": 0.20 },
+    { "from": "Wireframing", "to": "UX Research", "strength": 0.85 },
+    { "from": "Wireframing", "to": "UI Design", "strength": 0.85 },
+
+    { "from": "iOS", "to": "UI Design",       "strength": 0.85 },
+    { "from": "iOS", "to": "REST APIs",       "strength": 0.80 },
+    { "from": "Android", "to": "UI Design",   "strength": 0.85 },
+    { "from": "Android", "to": "REST APIs",   "strength": 0.80 },
+
+    { "from": "Swift", "to": "iOS",           "strength": 0.95 },
+    { "from": "Kotlin", "to": "Android",      "strength": 0.95 },
+    { "from": "React Native", "to": "React",  "strength": 0.90 },
+    { "from": "React Native", "to": "UI Design", "strength": 0.85 },
+    { "from": "Flutter", "to": "Dart",        "strength": 0.95 },
+    { "from": "Flutter", "to": "UI Design",   "strength": 0.85 },
+    { "from": "Expo", "to": "React Native",   "strength": 0.95 },
+
+    { "from": "Docker", "to": "AWS",          "strength": 0.85 },
+    { "from": "Docker", "to": "CI/CD",        "strength": 0.85 },
+    { "from": "Kubernetes", "to": "Docker",   "strength": 0.95 },
+    { "from": "Kubernetes", "to": "AWS",      "strength": 0.80 },
+    { "from": "Linux", "to": "Docker",        "strength": 0.85 },
+    { "from": "Linux", "to": "CI/CD",         "strength": 0.75 },
+
+    { "from": "AWS", "to": "CI/CD",           "strength": 0.80 },
+    { "from": "AWS Lambda", "to": "AWS",      "strength": 0.95 },
+    { "from": "AWS Lambda", "to": "Node.js",  "strength": 0.75 },
+    { "from": "Terraform", "to": "AWS",       "strength": 0.95 },
+    { "from": "Terraform", "to": "Docker",    "strength": 0.75 },
+    { "from": "Ansible", "to": "Docker",      "strength": 0.75 },
+    { "from": "Ansible", "to": "Linux",       "strength": 0.85 },
+    { "from": "Firebase", "to": "React",      "strength": 0.75 },
+    { "from": "Firebase", "to": "React Native", "strength": 0.80 },
+
+    { "from": "Grafana", "to": "Prometheus",  "strength": 0.95 },
+    { "from": "Grafana", "to": "Docker",      "strength": 0.70 },
+    { "from": "Prometheus", "to": "Kubernetes", "strength": 0.85 },
+
+    { "from": "DynamoDB", "to": "AWS",        "strength": 0.85 },
+    { "from": "DynamoDB", "to": "REST APIs",  "strength": 0.75 },
+
+    { "from": "Product Strategy", "to": "Pitching", "strength": 0.90 },
+    { "from": "Product Strategy", "to": "UX Research", "strength": 0.85 },
+    { "from": "Pitching", "to": "UI Design",  "strength": 0.70 },
+
+    { "from": "PostgreSQL", "to": "MongoDB",  "strength": 0.20 },
+    { "from": "PostgreSQL", "to": "Neo4j",    "strength": 0.30 },
+    { "from": "MongoDB", "to": "Neo4j",       "strength": 0.30 }
+  ]
+}
