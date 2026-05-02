@@ -5,26 +5,58 @@
     "description": "Static analysis tool that uses GPT to flag code smells in Python and JS PRs.",
     "rating": 5,
     "members": [
-      { "userId": "650000000000000000000001", "role": "Backend" },
-      { "userId": "650000000000000000000002", "role": "Backend" },
-      { "userId": "650000000000000000000005", "role": "Designer" },
-      { "userId": "650000000000000000000010", "role": "Data" }
+      {
+        "userId": "650000000000000000000001",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000002",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000005",
+        "role": "Designer"
+      },
+      {
+        "userId": "650000000000000000000010",
+        "role": "Data"
+      }
     ],
-    "skills_used": ["Python", "Node.js", "Machine Learning", "PostgreSQL", "UI Design"],
+    "skills_used": [
+      "Python",
+      "Node.js",
+      "Machine Learning",
+      "PostgreSQL",
+      "UI Design"
+    ],
     "hackathonId": "660000000000000000000004",
     "completedAt": "2025-11-12T18:00:00Z"
   },
   {
     "_id": "680000000000000000000002",
-    "title": "Mosaic — Photo Mosaic Generator",
+    "title": "Mosaic \u2014 Photo Mosaic Generator",
     "description": "Upload a photo, get a mosaic made of thousands of smaller photos from your library.",
     "rating": 4,
     "members": [
-      { "userId": "650000000000000000000003", "role": "Backend" },
-      { "userId": "650000000000000000000007", "role": "Frontend" },
-      { "userId": "650000000000000000000012", "role": "Designer" }
+      {
+        "userId": "650000000000000000000003",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000007",
+        "role": "Fullstack"
+      },
+      {
+        "userId": "650000000000000000000012",
+        "role": "Designer"
+      }
     ],
-    "skills_used": ["Python", "React", "UI Design", "Figma"],
+    "skills_used": [
+      "Python",
+      "React",
+      "UI Design",
+      "Figma"
+    ],
     "hackathonId": "660000000000000000000004",
     "completedAt": "2025-10-28T20:00:00Z"
   },
@@ -34,12 +66,30 @@
     "description": "AI cycling coach that builds routes based on your fitness goals and traffic data.",
     "rating": 5,
     "members": [
-      { "userId": "650000000000000000000008", "role": "Backend" },
-      { "userId": "650000000000000000000015", "role": "Frontend" },
-      { "userId": "650000000000000000000019", "role": "Data" },
-      { "userId": "650000000000000000000023", "role": "Designer" }
+      {
+        "userId": "650000000000000000000008",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000015",
+        "role": "Frontend"
+      },
+      {
+        "userId": "650000000000000000000019",
+        "role": "AI/ML"
+      },
+      {
+        "userId": "650000000000000000000023",
+        "role": "Fullstack"
+      }
     ],
-    "skills_used": ["Node.js", "React", "Machine Learning", "MongoDB", "UI Design"],
+    "skills_used": [
+      "Node.js",
+      "React",
+      "Machine Learning",
+      "MongoDB",
+      "UI Design"
+    ],
     "hackathonId": "660000000000000000000005",
     "completedAt": "2025-09-15T14:30:00Z"
   },
@@ -49,10 +99,20 @@
     "description": "Mobile app for browsing OpenLibrary with offline reading.",
     "rating": 3,
     "members": [
-      { "userId": "650000000000000000000022", "role": "Mobile" },
-      { "userId": "650000000000000000000028", "role": "Backend" }
+      {
+        "userId": "650000000000000000000022",
+        "role": "Mobile"
+      },
+      {
+        "userId": "650000000000000000000028",
+        "role": "AI/ML"
+      }
     ],
-    "skills_used": ["iOS", "Node.js", "REST APIs"],
+    "skills_used": [
+      "iOS",
+      "Node.js",
+      "REST APIs"
+    ],
     "hackathonId": "660000000000000000000004",
     "completedAt": "2025-08-20T19:45:00Z"
   },
@@ -62,12 +122,30 @@
     "description": "Drag-and-drop data viz tool for non-technical users.",
     "rating": 5,
     "members": [
-      { "userId": "650000000000000000000006", "role": "Frontend" },
-      { "userId": "650000000000000000000010", "role": "Data" },
-      { "userId": "650000000000000000000033", "role": "Designer" },
-      { "userId": "650000000000000000000050", "role": "PM" }
+      {
+        "userId": "650000000000000000000006",
+        "role": "AI/ML"
+      },
+      {
+        "userId": "650000000000000000000010",
+        "role": "Data"
+      },
+      {
+        "userId": "650000000000000000000033",
+        "role": "Designer"
+      },
+      {
+        "userId": "650000000000000000000050",
+        "role": "Fullstack"
+      }
     ],
-    "skills_used": ["React", "Python", "Data Analysis", "UI Design", "Pitching"],
+    "skills_used": [
+      "React",
+      "Python",
+      "Data Analysis",
+      "UI Design",
+      "Pitching"
+    ],
     "hackathonId": "660000000000000000000001",
     "completedAt": "2025-07-08T16:00:00Z"
   },
@@ -77,11 +155,25 @@
     "description": "Logistics optimizer that reduces empty truck miles by route-sharing.",
     "rating": 4,
     "members": [
-      { "userId": "650000000000000000000017", "role": "Backend" },
-      { "userId": "650000000000000000000024", "role": "Data" },
-      { "userId": "650000000000000000000035", "role": "Frontend" }
+      {
+        "userId": "650000000000000000000017",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000024",
+        "role": "Data"
+      },
+      {
+        "userId": "650000000000000000000035",
+        "role": "Fullstack"
+      }
     ],
-    "skills_used": ["Python", "PostgreSQL", "React", "Data Analysis"],
+    "skills_used": [
+      "Python",
+      "PostgreSQL",
+      "React",
+      "Data Analysis"
+    ],
     "hackathonId": "660000000000000000000005",
     "completedAt": "2025-06-22T21:00:00Z"
   },
@@ -91,10 +183,20 @@
     "description": "Restaurant bill splitter with itemized receipt OCR and Venmo integration.",
     "rating": 2,
     "members": [
-      { "userId": "650000000000000000000011", "role": "Mobile" },
-      { "userId": "650000000000000000000026", "role": "Backend" }
+      {
+        "userId": "650000000000000000000011",
+        "role": "Mobile"
+      },
+      {
+        "userId": "650000000000000000000026",
+        "role": "Backend"
+      }
     ],
-    "skills_used": ["iOS", "Node.js", "REST APIs"],
+    "skills_used": [
+      "iOS",
+      "Node.js",
+      "REST APIs"
+    ],
     "hackathonId": "660000000000000000000004",
     "completedAt": "2025-05-30T12:00:00Z"
   },
@@ -104,12 +206,30 @@
     "description": "Decentralized writing collective with token-gated chapter releases.",
     "rating": 5,
     "members": [
-      { "userId": "650000000000000000000031", "role": "Backend" },
-      { "userId": "650000000000000000000038", "role": "Frontend" },
-      { "userId": "650000000000000000000041", "role": "Designer" },
-      { "userId": "650000000000000000000045", "role": "PM" }
+      {
+        "userId": "650000000000000000000031",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000038",
+        "role": "AI/ML"
+      },
+      {
+        "userId": "650000000000000000000041",
+        "role": "Data Engineer"
+      },
+      {
+        "userId": "650000000000000000000045",
+        "role": "Fullstack"
+      }
     ],
-    "skills_used": ["Node.js", "React", "UI Design", "Product Strategy", "Pitching"],
+    "skills_used": [
+      "Node.js",
+      "React",
+      "UI Design",
+      "Product Strategy",
+      "Pitching"
+    ],
     "hackathonId": "660000000000000000000003",
     "completedAt": "2025-04-18T22:30:00Z"
   },
@@ -119,11 +239,25 @@
     "description": "Anonymous tip line for whistleblowers with end-to-end encryption.",
     "rating": 4,
     "members": [
-      { "userId": "650000000000000000000004", "role": "Backend" },
-      { "userId": "650000000000000000000009", "role": "Backend" },
-      { "userId": "650000000000000000000014", "role": "Frontend" }
+      {
+        "userId": "650000000000000000000004",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000009",
+        "role": "Data Engineer"
+      },
+      {
+        "userId": "650000000000000000000014",
+        "role": "Data Engineer"
+      }
     ],
-    "skills_used": ["Python", "Node.js", "PostgreSQL", "React"],
+    "skills_used": [
+      "Python",
+      "Node.js",
+      "PostgreSQL",
+      "React"
+    ],
     "hackathonId": "660000000000000000000001",
     "completedAt": "2025-03-25T17:00:00Z"
   },
@@ -133,10 +267,20 @@
     "description": "Generate a designer-quality CV from a photo of your handwritten notes.",
     "rating": 3,
     "members": [
-      { "userId": "650000000000000000000016", "role": "Frontend" },
-      { "userId": "650000000000000000000027", "role": "Designer" }
+      {
+        "userId": "650000000000000000000016",
+        "role": "Frontend"
+      },
+      {
+        "userId": "650000000000000000000027",
+        "role": "Designer"
+      }
     ],
-    "skills_used": ["React", "UI Design", "Figma"],
+    "skills_used": [
+      "React",
+      "UI Design",
+      "Figma"
+    ],
     "hackathonId": "660000000000000000000005",
     "completedAt": "2025-02-14T13:30:00Z"
   },
@@ -146,12 +290,30 @@
     "description": "Uptime monitor with smart alerting that learns your team's response patterns.",
     "rating": 5,
     "members": [
-      { "userId": "650000000000000000000003", "role": "Backend" },
-      { "userId": "650000000000000000000008", "role": "Backend" },
-      { "userId": "650000000000000000000020", "role": "Designer" },
-      { "userId": "650000000000000000000043", "role": "Data" }
+      {
+        "userId": "650000000000000000000003",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000008",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000020",
+        "role": "Designer"
+      },
+      {
+        "userId": "650000000000000000000043",
+        "role": "Data"
+      }
     ],
-    "skills_used": ["Docker", "AWS", "Node.js", "UI Design", "Machine Learning"],
+    "skills_used": [
+      "Docker",
+      "AWS",
+      "Node.js",
+      "UI Design",
+      "Machine Learning"
+    ],
     "hackathonId": "660000000000000000000002",
     "completedAt": "2025-01-30T19:00:00Z"
   },
@@ -161,11 +323,25 @@
     "description": "Group workout planner with shared progress tracking.",
     "rating": 4,
     "members": [
-      { "userId": "650000000000000000000022", "role": "Mobile" },
-      { "userId": "650000000000000000000037", "role": "Backend" },
-      { "userId": "650000000000000000000044", "role": "Designer" }
+      {
+        "userId": "650000000000000000000022",
+        "role": "Mobile"
+      },
+      {
+        "userId": "650000000000000000000037",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000044",
+        "role": "Designer"
+      }
     ],
-    "skills_used": ["Android", "Node.js", "MongoDB", "UI Design"],
+    "skills_used": [
+      "Android",
+      "Node.js",
+      "MongoDB",
+      "UI Design"
+    ],
     "hackathonId": "660000000000000000000005",
     "completedAt": "2024-12-10T15:00:00Z"
   },
@@ -175,10 +351,20 @@
     "description": "Voice notes with auto-summarization and topic extraction.",
     "rating": 2,
     "members": [
-      { "userId": "650000000000000000000011", "role": "Mobile" },
-      { "userId": "650000000000000000000034", "role": "Data" }
+      {
+        "userId": "650000000000000000000011",
+        "role": "Mobile"
+      },
+      {
+        "userId": "650000000000000000000034",
+        "role": "Data"
+      }
     ],
-    "skills_used": ["iOS", "Python", "Machine Learning"],
+    "skills_used": [
+      "iOS",
+      "Python",
+      "Machine Learning"
+    ],
     "hackathonId": "660000000000000000000004",
     "completedAt": "2024-11-22T18:30:00Z"
   },
@@ -188,12 +374,30 @@
     "description": "Crowd-sourced map of accessible buildings for wheelchair users.",
     "rating": 5,
     "members": [
-      { "userId": "650000000000000000000018", "role": "Frontend" },
-      { "userId": "650000000000000000000025", "role": "Backend" },
-      { "userId": "650000000000000000000029", "role": "Data" },
-      { "userId": "650000000000000000000048", "role": "PM" }
+      {
+        "userId": "650000000000000000000018",
+        "role": "Frontend"
+      },
+      {
+        "userId": "650000000000000000000025",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000029",
+        "role": "Data"
+      },
+      {
+        "userId": "650000000000000000000048",
+        "role": "PM"
+      }
     ],
-    "skills_used": ["React", "Node.js", "PostgreSQL", "Data Analysis", "Product Strategy"],
+    "skills_used": [
+      "React",
+      "Node.js",
+      "PostgreSQL",
+      "Data Analysis",
+      "Product Strategy"
+    ],
     "hackathonId": "660000000000000000000004",
     "completedAt": "2024-10-15T20:00:00Z"
   },
@@ -203,11 +407,25 @@
     "description": "Real-time sentiment analysis of crypto Twitter for traders.",
     "rating": 4,
     "members": [
-      { "userId": "650000000000000000000010", "role": "Data" },
-      { "userId": "650000000000000000000031", "role": "Backend" },
-      { "userId": "650000000000000000000040", "role": "Frontend" }
+      {
+        "userId": "650000000000000000000010",
+        "role": "Data"
+      },
+      {
+        "userId": "650000000000000000000031",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000040",
+        "role": "Frontend"
+      }
     ],
-    "skills_used": ["Python", "Machine Learning", "Node.js", "React"],
+    "skills_used": [
+      "Python",
+      "Machine Learning",
+      "Node.js",
+      "React"
+    ],
     "hackathonId": "660000000000000000000003",
     "completedAt": "2024-09-08T16:45:00Z"
   },
@@ -217,10 +435,20 @@
     "description": "Generate lo-fi background music for your video edits in one click.",
     "rating": 3,
     "members": [
-      { "userId": "650000000000000000000034", "role": "Data" },
-      { "userId": "650000000000000000000027", "role": "Designer" }
+      {
+        "userId": "650000000000000000000034",
+        "role": "Data"
+      },
+      {
+        "userId": "650000000000000000000027",
+        "role": "Designer"
+      }
     ],
-    "skills_used": ["Python", "Machine Learning", "UI Design"],
+    "skills_used": [
+      "Python",
+      "Machine Learning",
+      "UI Design"
+    ],
     "hackathonId": "660000000000000000000002",
     "completedAt": "2024-08-19T14:00:00Z"
   },
@@ -230,11 +458,25 @@
     "description": "Restaurant table-sharing app for solo diners who want company.",
     "rating": 4,
     "members": [
-      { "userId": "650000000000000000000022", "role": "Mobile" },
-      { "userId": "650000000000000000000037", "role": "Backend" },
-      { "userId": "650000000000000000000044", "role": "Designer" }
+      {
+        "userId": "650000000000000000000022",
+        "role": "Mobile"
+      },
+      {
+        "userId": "650000000000000000000037",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000044",
+        "role": "Designer"
+      }
     ],
-    "skills_used": ["Android", "Node.js", "MongoDB", "UI Design"],
+    "skills_used": [
+      "Android",
+      "Node.js",
+      "MongoDB",
+      "UI Design"
+    ],
     "hackathonId": "660000000000000000000005",
     "completedAt": "2024-07-25T19:30:00Z"
   },
@@ -244,12 +486,30 @@
     "description": "Visual writing tool that maps story beats and character arcs.",
     "rating": 5,
     "members": [
-      { "userId": "650000000000000000000005", "role": "Designer" },
-      { "userId": "650000000000000000000033", "role": "Designer" },
-      { "userId": "650000000000000000000016", "role": "Frontend" },
-      { "userId": "650000000000000000000050", "role": "PM" }
+      {
+        "userId": "650000000000000000000005",
+        "role": "Designer"
+      },
+      {
+        "userId": "650000000000000000000033",
+        "role": "Designer"
+      },
+      {
+        "userId": "650000000000000000000016",
+        "role": "Frontend"
+      },
+      {
+        "userId": "650000000000000000000050",
+        "role": "Fullstack"
+      }
     ],
-    "skills_used": ["UI Design", "Figma", "React", "Product Strategy", "UX Research"],
+    "skills_used": [
+      "UI Design",
+      "Figma",
+      "React",
+      "Product Strategy",
+      "UX Research"
+    ],
     "hackathonId": "660000000000000000000005",
     "completedAt": "2024-06-12T17:15:00Z"
   },
@@ -259,10 +519,20 @@
     "description": "Hyper-local repair-person finder with verified reviews.",
     "rating": 2,
     "members": [
-      { "userId": "650000000000000000000017", "role": "Backend" },
-      { "userId": "650000000000000000000028", "role": "Frontend" }
+      {
+        "userId": "650000000000000000000017",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000028",
+        "role": "AI/ML"
+      }
     ],
-    "skills_used": ["Node.js", "PostgreSQL", "React"],
+    "skills_used": [
+      "Node.js",
+      "PostgreSQL",
+      "React"
+    ],
     "hackathonId": "660000000000000000000005",
     "completedAt": "2024-05-30T12:00:00Z"
   },
@@ -272,12 +542,30 @@
     "description": "Open API for live climate data, aggregated from 50+ sources.",
     "rating": 5,
     "members": [
-      { "userId": "650000000000000000000019", "role": "Data" },
-      { "userId": "650000000000000000000024", "role": "Backend" },
-      { "userId": "650000000000000000000043", "role": "Data" },
-      { "userId": "650000000000000000000048", "role": "PM" }
+      {
+        "userId": "650000000000000000000019",
+        "role": "AI/ML"
+      },
+      {
+        "userId": "650000000000000000000024",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000043",
+        "role": "Data"
+      },
+      {
+        "userId": "650000000000000000000048",
+        "role": "PM"
+      }
     ],
-    "skills_used": ["Python", "Data Analysis", "Node.js", "PostgreSQL", "Product Strategy"],
+    "skills_used": [
+      "Python",
+      "Data Analysis",
+      "Node.js",
+      "PostgreSQL",
+      "Product Strategy"
+    ],
     "hackathonId": "660000000000000000000001",
     "completedAt": "2024-04-18T21:00:00Z"
   },
@@ -287,11 +575,25 @@
     "description": "Interactive coding tutorials gamified for kids 10-14.",
     "rating": 4,
     "members": [
-      { "userId": "650000000000000000000018", "role": "Frontend" },
-      { "userId": "650000000000000000000035", "role": "Designer" },
-      { "userId": "650000000000000000000027", "role": "Designer" }
+      {
+        "userId": "650000000000000000000018",
+        "role": "Frontend"
+      },
+      {
+        "userId": "650000000000000000000035",
+        "role": "Fullstack"
+      },
+      {
+        "userId": "650000000000000000000027",
+        "role": "Designer"
+      }
     ],
-    "skills_used": ["React", "UI Design", "Figma", "UX Research"],
+    "skills_used": [
+      "React",
+      "UI Design",
+      "Figma",
+      "UX Research"
+    ],
     "hackathonId": "660000000000000000000004",
     "completedAt": "2024-03-22T16:30:00Z"
   },
@@ -301,10 +603,20 @@
     "description": "3D city visualizer for urban planners using procedural generation.",
     "rating": 3,
     "members": [
-      { "userId": "650000000000000000000014", "role": "Frontend" },
-      { "userId": "650000000000000000000029", "role": "Data" }
+      {
+        "userId": "650000000000000000000014",
+        "role": "Data Engineer"
+      },
+      {
+        "userId": "650000000000000000000029",
+        "role": "Data"
+      }
     ],
-    "skills_used": ["React", "Python", "Data Analysis"],
+    "skills_used": [
+      "React",
+      "Python",
+      "Data Analysis"
+    ],
     "hackathonId": "660000000000000000000005",
     "completedAt": "2024-02-08T18:45:00Z"
   },
@@ -314,12 +626,30 @@
     "description": "Anonymous peer-support chat rooms for university students.",
     "rating": 5,
     "members": [
-      { "userId": "650000000000000000000020", "role": "Backend" },
-      { "userId": "650000000000000000000026", "role": "Frontend" },
-      { "userId": "650000000000000000000036", "role": "Designer" },
-      { "userId": "650000000000000000000044", "role": "PM" }
+      {
+        "userId": "650000000000000000000020",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000026",
+        "role": "Frontend"
+      },
+      {
+        "userId": "650000000000000000000036",
+        "role": "Designer"
+      },
+      {
+        "userId": "650000000000000000000044",
+        "role": "PM"
+      }
     ],
-    "skills_used": ["Node.js", "React", "MongoDB", "UI Design", "UX Research"],
+    "skills_used": [
+      "Node.js",
+      "React",
+      "MongoDB",
+      "UI Design",
+      "UX Research"
+    ],
     "hackathonId": "660000000000000000000004",
     "completedAt": "2024-01-15T15:30:00Z"
   },
@@ -329,11 +659,25 @@
     "description": "Track expiry dates of pantry items with barcode scanner and recipe suggestions.",
     "rating": 4,
     "members": [
-      { "userId": "650000000000000000000022", "role": "Mobile" },
-      { "userId": "650000000000000000000034", "role": "Data" },
-      { "userId": "650000000000000000000037", "role": "Backend" }
+      {
+        "userId": "650000000000000000000022",
+        "role": "Mobile"
+      },
+      {
+        "userId": "650000000000000000000034",
+        "role": "Data"
+      },
+      {
+        "userId": "650000000000000000000037",
+        "role": "Backend"
+      }
     ],
-    "skills_used": ["iOS", "Python", "Machine Learning", "Node.js"],
+    "skills_used": [
+      "iOS",
+      "Python",
+      "Machine Learning",
+      "Node.js"
+    ],
     "hackathonId": "660000000000000000000005",
     "completedAt": "2023-12-20T19:00:00Z"
   },
@@ -343,11 +687,25 @@
     "description": "Beautiful printable book of your year in Git commits.",
     "rating": 4,
     "members": [
-      { "userId": "650000000000000000000015", "role": "Frontend" },
-      { "userId": "650000000000000000000028", "role": "Backend" },
-      { "userId": "650000000000000000000033", "role": "Designer" }
+      {
+        "userId": "650000000000000000000015",
+        "role": "Frontend"
+      },
+      {
+        "userId": "650000000000000000000028",
+        "role": "AI/ML"
+      },
+      {
+        "userId": "650000000000000000000033",
+        "role": "Designer"
+      }
     ],
-    "skills_used": ["React", "Node.js", "UI Design", "Figma"],
+    "skills_used": [
+      "React",
+      "Node.js",
+      "UI Design",
+      "Figma"
+    ],
     "hackathonId": "660000000000000000000002",
     "completedAt": "2023-11-30T17:30:00Z"
   },
@@ -357,10 +715,19 @@
     "description": "Smart recipe scaler that adjusts based on what you actually have.",
     "rating": 3,
     "members": [
-      { "userId": "650000000000000000000034", "role": "Data" },
-      { "userId": "650000000000000000000027", "role": "Frontend" }
+      {
+        "userId": "650000000000000000000034",
+        "role": "Data"
+      },
+      {
+        "userId": "650000000000000000000027",
+        "role": "Frontend"
+      }
     ],
-    "skills_used": ["Python", "React"],
+    "skills_used": [
+      "Python",
+      "React"
+    ],
     "hackathonId": "660000000000000000000005",
     "completedAt": "2023-10-25T14:00:00Z"
   },
@@ -370,12 +737,30 @@
     "description": "Personal finance assistant that learns your spending patterns and suggests cuts.",
     "rating": 5,
     "members": [
-      { "userId": "650000000000000000000010", "role": "Data" },
-      { "userId": "650000000000000000000017", "role": "Backend" },
-      { "userId": "650000000000000000000044", "role": "Designer" },
-      { "userId": "650000000000000000000048", "role": "PM" }
+      {
+        "userId": "650000000000000000000010",
+        "role": "Data"
+      },
+      {
+        "userId": "650000000000000000000017",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000044",
+        "role": "Designer"
+      },
+      {
+        "userId": "650000000000000000000048",
+        "role": "PM"
+      }
     ],
-    "skills_used": ["Python", "Machine Learning", "Node.js", "UI Design", "Product Strategy"],
+    "skills_used": [
+      "Python",
+      "Machine Learning",
+      "Node.js",
+      "UI Design",
+      "Product Strategy"
+    ],
     "hackathonId": "660000000000000000000005",
     "completedAt": "2023-09-12T20:30:00Z"
   },
@@ -385,10 +770,20 @@
     "description": "Crowd-sourced live border crossing wait times for daily commuters.",
     "rating": 2,
     "members": [
-      { "userId": "650000000000000000000022", "role": "Mobile" },
-      { "userId": "650000000000000000000037", "role": "Backend" }
+      {
+        "userId": "650000000000000000000022",
+        "role": "Mobile"
+      },
+      {
+        "userId": "650000000000000000000037",
+        "role": "Backend"
+      }
     ],
-    "skills_used": ["Android", "Node.js", "MongoDB"],
+    "skills_used": [
+      "Android",
+      "Node.js",
+      "MongoDB"
+    ],
     "hackathonId": "660000000000000000000005",
     "completedAt": "2023-08-22T11:30:00Z"
   },
@@ -398,12 +793,30 @@
     "description": "Live meeting transcription with action-item extraction.",
     "rating": 5,
     "members": [
-      { "userId": "650000000000000000000034", "role": "Data" },
-      { "userId": "650000000000000000000003", "role": "Backend" },
-      { "userId": "650000000000000000000027", "role": "Designer" },
-      { "userId": "650000000000000000000050", "role": "PM" }
+      {
+        "userId": "650000000000000000000034",
+        "role": "Data"
+      },
+      {
+        "userId": "650000000000000000000003",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000027",
+        "role": "Designer"
+      },
+      {
+        "userId": "650000000000000000000050",
+        "role": "Fullstack"
+      }
     ],
-    "skills_used": ["Python", "Machine Learning", "Node.js", "UI Design", "Pitching"],
+    "skills_used": [
+      "Python",
+      "Machine Learning",
+      "Node.js",
+      "UI Design",
+      "Pitching"
+    ],
     "hackathonId": "660000000000000000000002",
     "completedAt": "2023-07-08T18:00:00Z"
   },
@@ -413,11 +826,25 @@
     "description": "Container security scanner with fix suggestions for popular base images.",
     "rating": 4,
     "members": [
-      { "userId": "650000000000000000000003", "role": "Backend" },
-      { "userId": "650000000000000000000004", "role": "Backend" },
-      { "userId": "650000000000000000000043", "role": "Data" }
+      {
+        "userId": "650000000000000000000003",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000004",
+        "role": "Backend"
+      },
+      {
+        "userId": "650000000000000000000043",
+        "role": "Data"
+      }
     ],
-    "skills_used": ["Docker", "Python", "Machine Learning", "AWS"],
+    "skills_used": [
+      "Docker",
+      "Python",
+      "Machine Learning",
+      "AWS"
+    ],
     "hackathonId": "660000000000000000000002",
     "completedAt": "2023-06-15T16:30:00Z"
   }
