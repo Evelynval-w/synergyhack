@@ -17,7 +17,7 @@ client/dist/
 
 # Docker
 volumes/
-data/
+/data/
 
 # Editors
 .vscode/
