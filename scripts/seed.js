@@ -1,7 +1,12 @@
 // scripts/seed.js
 //
-// Unified seed. Runs Mongo, Neo4j, Redis seeds in order.
+// Unified seed runner. Calls the per-DB seeders in order.
 // Run from repo root: npm run seed
+//
+// Order matters: Mongo first (source of truth for content),
+// then Neo4j (which uses the same string IDs for cross-DB joins).
+// Redis is not seeded — its data is created at runtime
+// (sessions on login, presence on heartbeat, slots on team join, etc.).
 
 const { spawnSync } = require('child_process');
 
@@ -18,5 +23,4 @@ function run(name, description) {
 
 run('mongo', 'Seeding MongoDB');
 run('neo4j', 'Seeding Neo4j');
-run('redis', 'Seeding Redis');
 console.log('\n=== All seeds complete. ===');
