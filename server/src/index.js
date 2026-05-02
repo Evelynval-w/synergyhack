@@ -7,10 +7,10 @@ const express = require('express');
 require('dotenv').config({ path: '../.env' });
 
 const redis = require('./db/redis');
+const mongo = require('./db/mongo');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
 
 app.use(cors());
 app.use(express.json());
@@ -25,18 +25,25 @@ const heartbeatRoutes = require('./routes/heartbeat.routes');
 const messageRoutes = require('./routes/messages.routes');
 const matchRoutes = require('./routes/matches.routes');
 const teamRoutes = require('./routes/teams.routes');
+const userRoutes = require('./routes/users.routes');
+const hackathonRoutes = require('./routes/hackathons.routes');
+const analyticsRoutes = require('./routes/analytics.routes');
 
 app.use('/auth', authRoutes);
 app.use('/heartbeat', heartbeatRoutes);
-app.use('/teams', messageRoutes);     // mounts /teams/:id/messages
-app.use('/teams', matchRoutes);       // mounts /teams/:id/matches
+app.use('/teams', messageRoutes);
+app.use('/teams', matchRoutes);
 app.use('/teams', teamRoutes);
+app.use('/users', userRoutes);
+app.use('/hackathons', hackathonRoutes);
+app.use('/analytics', analyticsRoutes);
 
 // === Health check ===
 app.get('/health', async (req, res) => {
   try {
     const redisOk = await redis.verifyConnection();
-    res.json({ status: 'ok', redis: redisOk ? 'ok' : 'failed' });
+    await mongo.verifyConnection();
+    res.json({ status: 'ok', redis: redisOk ? 'ok' : 'failed', mongo: 'ok' });
   } catch (err) {
     res.status(500).json({ status: 'degraded', error: err.message });
   }
@@ -51,6 +58,9 @@ async function start() {
   try {
     await redis.connect();
     console.log('Connected to Redis');
+    await mongo.connect();
+    await mongo.ensureIndexes();
+    console.log('Connected to MongoDB');
     app.listen(PORT, () => {
       console.log(`Server listening on http://localhost:${PORT}`);
     });
