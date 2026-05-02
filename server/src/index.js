@@ -27,6 +27,7 @@ const matchRoutes = require('./routes/matches.routes');
 const teamRoutes = require('./routes/teams.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
 const usersRoutes = require('./routes/users.routes');
+const dmsRoutes = require('./routes/dms.routes');
 
 app.use('/auth', authRoutes);
 app.use('/heartbeat', heartbeatRoutes);
@@ -35,6 +36,7 @@ app.use('/teams', matchRoutes);       // mounts /teams/:id/matches
 app.use('/teams', teamRoutes);
 app.use('/analytics', analyticsRoutes);
 app.use('/users', usersRoutes);
+app.use('/dms', dmsRoutes);           // mounts /dms/:peerId/messages
 
 // === Health check ===
 // Pings each datastore so a single endpoint tells us if the stack is healthy.
