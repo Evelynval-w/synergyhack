@@ -1,69 +1,57 @@
-// Placeholder Mongo connector — reads from JSON fixtures for now.
-// Aadithya will replace with real MongoClient.
+// server/src/db/mongo.js
 
-const fs = require('fs');
-const path = require('path');
+const { MongoClient } = require('mongodb');
+require('dotenv').config({ path: require('path').join(__dirname, '../../../.env') });
 
-function loadFixture(name) {
-  try {
-    return JSON.parse(fs.readFileSync(
-      path.join(__dirname, '..', '..', '..', 'scripts', 'fixtures', name),
-      'utf8'
-    ));
-  } catch (err) {
-    return [];
+const URI = process.env.MONGO_URI;
+const DB_NAME = process.env.MONGO_DB || 'synergyhack';
+
+if (!URI) {
+  throw new Error('MONGO_URI not set. Check your .env file at the repo root.');
+}
+
+const client = new MongoClient(URI, {
+  maxPoolSize: 20,
+  serverSelectionTimeoutMS: 10000,
+});
+
+let _db = null;
+
+async function connect() {
+  if (!_db) {
+    await client.connect();
+    _db = client.db(DB_NAME);
   }
+  return _db;
 }
 
-const data = {
-  users: loadFixture('users.json'),
-  teams: loadFixture('teams.json'),
-  hackathons: loadFixture('hackathons.json'),
-  past_projects: loadFixture('past_projects.json'),
-};
-
-function matchesQuery(item, query) {
-  return Object.entries(query).every(([k, v]) => {
-    if (typeof v === 'object' && v !== null && Array.isArray(v.$in)) {
-      // Handle ObjectId instances by converting to string
-      const candidates = v.$in.map(x => String(x));
-      return candidates.includes(String(item[k]));
-    }
-    return String(item[k]) === String(v);
-  });
+function db() {
+  if (!_db) {
+    throw new Error('MongoDB not connected. Call connect() first.');
+  }
+  return _db;
 }
 
-function makeCollection(name) {
-  const items = data[name] || [];
-  return {
-    findOne: async (query = {}) => {
-      if (Object.keys(query).length === 0) return items[0] || null;
-      return items.find(item => matchesQuery(item, query)) || null;
-    },
-    find: (query = {}, _options = {}) => ({
-      toArray: async () => {
-        if (Object.keys(query).length === 0) return items;
-        return items.filter(item => matchesQuery(item, query));
-      },
-      limit: () => ({ toArray: async () => items }),
-      project: () => ({ toArray: async () => items }),
-    }),
-    insertOne: async () => ({ insertedId: null }),
-    updateOne: async () => ({ modifiedCount: 0 }),
-  };
+async function verifyConnection() {
+  const d = await connect();
+  await d.admin().ping();
+  return true;
 }
 
-// Support BOTH `db()` (function returning db-like object) AND `db.collection(...)` (object form)
-function dbFn() {
-  return {
-    collection: (name) => makeCollection(name),
-  };
+async function ensureIndexes() {
+  const d = await connect();
+  await d.collection('users').createIndex(
+    { bio: 'text', username: 'text' },
+    { name: 'users_text_search', default_language: 'english' }
+  );
+  await d.collection('users').createIndex({ username: 1 }, { unique: true });
+  await d.collection('users').createIndex({ email: 1 }, { unique: true });
+  await d.collection('hackathons').createIndex({ startDate: 1 });
 }
-dbFn.collection = (name) => makeCollection(name);
 
-module.exports = {
-  db: dbFn,
-  client: null,
-  connect: async () => dbFn,
-  close: async () => {},
-};
+async function close() {
+  await client.close();
+  _db = null;
+}
+
+module.exports = { connect, db, verifyConnection, close, ensureIndexes, client };
