@@ -1,69 +1,96 @@
-// Placeholder Mongo connector — reads from JSON fixtures for now.
-// Aadithya will replace with real MongoClient.
+// server/src/db/mongo.js
+//
+// Real MongoDB connector using the official `mongodb` driver.
+// Provides a singleton MongoClient and exposes the active database via `db()`.
+//
+// Usage:
+//   const { connect, db } = require('./db/mongo');
+//   await connect();              // call once at server boot
+//   db().collection('users')...   // use anywhere after connect()
+//
+// The function form `db()` (rather than a property `db`) is intentional —
+// it lets services import `{ db }` and use it in the call site exactly the
+// same way the previous fixture stub did, so no service files need to change.
 
-const fs = require('fs');
-const path = require('path');
+const { MongoClient } = require('mongodb');
 
-function loadFixture(name) {
+let client = null;
+let database = null;
+
+/**
+ * Establishes the MongoClient connection. Idempotent — safe to call
+ * multiple times; subsequent calls return the existing connection.
+ */
+async function connect() {
+  if (database) return database;
+
+  const uri = process.env.MONGO_URI;
+  if (!uri) {
+    throw new Error('MONGO_URI is not set in the environment');
+  }
+
+  client = new MongoClient(uri);
+  await client.connect();
+
+  const dbName = process.env.MONGO_DB || 'synergyhack';
+  database = client.db(dbName);
+
+  return database;
+}
+
+/**
+ * Returns the connected database instance. Throws if connect() has
+ * not been called yet — fail loud rather than silently corrupting state.
+ */
+function getDb() {
+  if (!database) {
+    throw new Error('Mongo not connected. Call connect() before using the database.');
+  }
+  return database;
+}
+
+/**
+ * Function alias for getDb(). Existing services do `db().collection(...)`,
+ * so we expose `db` as a function to keep their call sites unchanged.
+ */
+function db() {
+  return getDb();
+}
+
+/**
+ * Lightweight liveness check used by the /health endpoint.
+ * Pings the database — succeeds only if MongoDB is reachable AND auth is valid.
+ */
+async function verifyConnection() {
   try {
-    return JSON.parse(fs.readFileSync(
-      path.join(__dirname, '..', '..', '..', 'scripts', 'fixtures', name),
-      'utf8'
-    ));
+    if (!database) await connect();
+    await database.command({ ping: 1 });
+    return true;
   } catch (err) {
-    return [];
+    console.error('MongoDB ping failed:', err.message);
+    return false;
   }
 }
 
-const data = {
-  users: loadFixture('users.json'),
-  teams: loadFixture('teams.json'),
-  hackathons: loadFixture('hackathons.json'),
-  past_projects: loadFixture('past_projects.json'),
-};
-
-function matchesQuery(item, query) {
-  return Object.entries(query).every(([k, v]) => {
-    if (typeof v === 'object' && v !== null && Array.isArray(v.$in)) {
-      // Handle ObjectId instances by converting to string
-      const candidates = v.$in.map(x => String(x));
-      return candidates.includes(String(item[k]));
-    }
-    return String(item[k]) === String(v);
-  });
+/**
+ * Closes the underlying client. Called from the graceful-shutdown
+ * handler in index.js so connections aren't left open on SIGTERM.
+ */
+async function close() {
+  if (client) {
+    await client.close();
+    client = null;
+    database = null;
+  }
 }
-
-function makeCollection(name) {
-  const items = data[name] || [];
-  return {
-    findOne: async (query = {}) => {
-      if (Object.keys(query).length === 0) return items[0] || null;
-      return items.find(item => matchesQuery(item, query)) || null;
-    },
-    find: (query = {}, _options = {}) => ({
-      toArray: async () => {
-        if (Object.keys(query).length === 0) return items;
-        return items.filter(item => matchesQuery(item, query));
-      },
-      limit: () => ({ toArray: async () => items }),
-      project: () => ({ toArray: async () => items }),
-    }),
-    insertOne: async () => ({ insertedId: null }),
-    updateOne: async () => ({ modifiedCount: 0 }),
-  };
-}
-
-// Support BOTH `db()` (function returning db-like object) AND `db.collection(...)` (object form)
-function dbFn() {
-  return {
-    collection: (name) => makeCollection(name),
-  };
-}
-dbFn.collection = (name) => makeCollection(name);
 
 module.exports = {
-  db: dbFn,
-  client: null,
-  connect: async () => dbFn,
-  close: async () => {},
+  connect,
+  getDb,
+  db,
+  verifyConnection,
+  close,
+  get client() {
+    return client;
+  },
 };

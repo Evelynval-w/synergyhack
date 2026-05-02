@@ -7,10 +7,10 @@ const express = require('express');
 require('dotenv').config({ path: '../.env' });
 
 const redis = require('./db/redis');
+const mongo = require('./db/mongo');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
 
 app.use(cors());
 app.use(express.json());
@@ -33,24 +33,52 @@ app.use('/teams', matchRoutes);       // mounts /teams/:id/matches
 app.use('/teams', teamRoutes);
 
 // === Health check ===
+// Pings each datastore so a single endpoint tells us if the stack is healthy.
 app.get('/health', async (req, res) => {
   try {
-    const redisOk = await redis.verifyConnection();
-    res.json({ status: 'ok', redis: redisOk ? 'ok' : 'failed' });
+    const [redisOk, mongoOk] = await Promise.all([
+      redis.verifyConnection(),
+      mongo.verifyConnection(),
+    ]);
+    const allOk = redisOk && mongoOk;
+    res.status(allOk ? 200 : 503).json({
+      status: allOk ? 'ok' : 'degraded',
+      redis: redisOk ? 'ok' : 'failed',
+      mongo: mongoOk ? 'ok' : 'failed',
+    });
   } catch (err) {
-    res.status(500).json({ status: 'degraded', error: err.message });
+    res.status(500).json({ status: 'error', error: err.message });
   }
 });
 
 app.get('/', (req, res) => {
-  res.json({ name: 'SynergyHack API', version: '0.3.0' });
+  res.json({ name: 'SynergyHack API', version: '0.4.0' });
 });
+
+// === Graceful shutdown ===
+// Closes connections cleanly on SIGTERM/SIGINT so containers and
+// `Ctrl+C` don't leave dangling sockets on the database side.
+async function shutdown(signal) {
+  console.log(`\nReceived ${signal}, shutting down...`);
+  try {
+    await mongo.close();
+  } catch (e) {
+    console.error('Error closing Mongo:', e.message);
+  }
+  process.exit(0);
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 // === Start ===
 async function start() {
   try {
+    await mongo.connect();
+    console.log('Connected to MongoDB');
+
     await redis.connect();
     console.log('Connected to Redis');
+
     app.listen(PORT, () => {
       console.log(`Server listening on http://localhost:${PORT}`);
     });
