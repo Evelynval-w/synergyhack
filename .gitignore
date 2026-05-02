@@ -46,3 +46,4 @@ client/.vite/
 /package.json
 /package-lock.json
 /node_modules/
+docs/finish-plan.md
