@@ -114,10 +114,14 @@ async function skillDemandByRole({ topN = 5 } = {}) {
  */
 async function successfulTeamPatterns() {
   const pipeline = [
-    // Stage 1 — only consider projects judged "successful." rating > 4
-    // means a 5-star project in our 1-5 scale. This is the analytical
-    // filter that makes everything downstream "successful patterns."
-    { $match: { rating: { $gt: 4 } } },
+    // Stage 1 — only consider projects judged "successful." rating >= 4
+    // means the project landed in the top half of the 1-5 scale (4-star
+    // or 5-star). The >= threshold (rather than > 4) gives us 21 projects
+    // instead of 11, which lets avgRating actually vary across the
+    // returned patterns — a 4.5-avg pattern is meaningfully different
+    // from a 5.0-avg pattern. With > 4 the filter lets only 5-stars
+    // through, which collapses every avgRating to exactly 5.0.
+    { $match: { rating: { $gte: 4 } } },
 
     // Stage 2 — extract a canonical role-combination per project.
     //   $members.role        => array of all member roles
