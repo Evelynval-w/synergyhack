@@ -29,6 +29,18 @@ function setUsername(username) {
   }
 }
 
+function getUserId() {
+  return localStorage.getItem('synergy_user_id');
+}
+
+function setUserId(userId) {
+  if (userId) {
+    localStorage.setItem('synergy_user_id', userId);
+  } else {
+    localStorage.removeItem('synergy_user_id');
+  }
+}
+
 async function request(path, options = {}) {
   const token = getToken();
   const headers = {
@@ -64,14 +76,18 @@ const api = {
       method: 'POST',
       body: JSON.stringify({ username }),
     });
+    // Server returns { token, userId, username } since the Phase 6 auth fix.
+    // Capture all three so the chat UI knows who "me" is when rendering.
     setToken(data.token);
-    setUsername(username);
+    setUsername(data.username || username);
+    setUserId(data.userId);
     return data;
   },
 
   logout() {
     setToken(null);
     setUsername(null);
+    setUserId(null);
   },
 
   isAuthenticated() {
@@ -79,6 +95,7 @@ const api = {
   },
 
   getUsername,
+  getUserId,
 };
 
 export default api;
