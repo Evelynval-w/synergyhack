@@ -1,0 +1,147 @@
+{
+  "users": [
+    {
+      "_id": "650000000000000000000001",
+      "username": "alice",
+      "email": "alice@test.com",
+      "bio": "Frontend developer skilled in React and TypeScript",
+      "role": "Frontend",
+      "avatar": null,
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "_id": "650000000000000000000002",
+      "username": "bob",
+      "email": "bob@test.com",
+      "bio": "Backend engineer with Python and Node.js experience",
+      "role": "Backend",
+      "avatar": null,
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "_id": "650000000000000000000003",
+      "username": "carol",
+      "email": "carol@test.com",
+      "bio": "Data scientist specialising in Machine Learning and Python",
+      "role": "Data",
+      "avatar": null,
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "_id": "650000000000000000000004",
+      "username": "dave",
+      "email": "dave@test.com",
+      "bio": "UI/UX Designer with Figma and CSS skills",
+      "role": "Designer",
+      "avatar": null,
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "_id": "650000000000000000000005",
+      "username": "eve",
+      "email": "eve@test.com",
+      "bio": "Product manager with experience in agile and roadmap planning",
+      "role": "PM",
+      "avatar": null,
+      "createdAt": "2026-01-01T00:00:00Z"
+    }
+  ],
+  "hackathons": [
+    {
+      "_id": "660000000000000000000001",
+      "name": "VivaTech 2026",
+      "startDate": "2026-06-17T00:00:00Z",
+      "endDate": "2026-06-20T00:00:00Z",
+      "tracks": ["AI", "Web3", "Health"],
+      "description": "Europe's biggest startup and tech event.",
+      "location": "Paris"
+    },
+    {
+      "_id": "660000000000000000000002",
+      "name": "HackParis Spring",
+      "startDate": "2026-04-10T00:00:00Z",
+      "endDate": "2026-04-12T00:00:00Z",
+      "tracks": ["EdTech", "FinTech"],
+      "description": "48-hour hackathon in central Paris.",
+      "location": "Paris"
+    }
+  ],
+  "teams": [
+    {
+      "_id": "670000000000000000000001",
+      "name": "Dark Scan",
+      "hackathonId": "660000000000000000000001",
+      "capacity": 4,
+      "description": "Building an AI-powered code reviewer.",
+      "createdBy": "650000000000000000000001",
+      "createdAt": "2026-01-15T00:00:00Z"
+    },
+    {
+      "_id": "670000000000000000000002",
+      "name": "HealthBot",
+      "hackathonId": "660000000000000000000001",
+      "capacity": 4,
+      "description": "ML model for early disease detection.",
+      "createdBy": "650000000000000000000002",
+      "createdAt": "2026-01-16T00:00:00Z"
+    }
+  ],
+  "past_projects": [
+    {
+      "_id": "680000000000000000000001",
+      "title": "AI Code Reviewer",
+      "description": "ML model that flags code smells.",
+      "rating": 5,
+      "members": [
+        { "userId": "650000000000000000000001", "role": "Frontend" },
+        { "userId": "650000000000000000000002", "role": "Backend" },
+        { "userId": "650000000000000000000003", "role": "Data" }
+      ],
+      "skills_used": ["Python", "React", "PostgreSQL", "Machine Learning"],
+      "hackathonId": "660000000000000000000002",
+      "completedAt": "2026-04-12T00:00:00Z"
+    },
+    {
+      "_id": "680000000000000000000002",
+      "title": "FinTrack",
+      "description": "Personal finance tracker with ML insights.",
+      "rating": 5,
+      "members": [
+        { "userId": "650000000000000000000002", "role": "Backend" },
+        { "userId": "650000000000000000000003", "role": "Data" },
+        { "userId": "650000000000000000000004", "role": "Designer" }
+      ],
+      "skills_used": ["Node.js", "Python", "Figma", "MongoDB"],
+      "hackathonId": "660000000000000000000002",
+      "completedAt": "2026-04-12T00:00:00Z"
+    },
+    {
+      "_id": "680000000000000000000003",
+      "title": "EduBot",
+      "description": "Chatbot for personalised learning paths.",
+      "rating": 3,
+      "members": [
+        { "userId": "650000000000000000000001", "role": "Frontend" },
+        { "userId": "650000000000000000000005", "role": "PM" }
+      ],
+      "skills_used": ["React", "Node.js"],
+      "hackathonId": "660000000000000000000002",
+      "completedAt": "2026-04-12T00:00:00Z"
+    },
+    {
+      "_id": "680000000000000000000004",
+      "title": "MediScan",
+      "description": "Image recognition for medical diagnosis.",
+      "rating": 5,
+      "members": [
+        { "userId": "650000000000000000000003", "role": "Data" },
+        { "userId": "650000000000000000000002", "role": "Backend" },
+        { "userId": "650000000000000000000004", "role": "Designer" },
+        { "userId": "650000000000000000000005", "role": "PM" }
+      ],
+      "skills_used": ["Python", "TensorFlow", "Figma", "Node.js"],
+      "hackathonId": "660000000000000000000001",
+      "completedAt": "2026-06-20T00:00:00Z"
+    }
+  ]
+}
