@@ -5,9 +5,17 @@
 
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
+import api from '../api/client';
 
 export default function Layout() {
-  const { username, logout } = useAuth();
+  const { username } = useAuth();
+
+  const handleSignOut = () => {
+    api.logout();
+    // Notify every useAuth subscriber to re-read localStorage. App
+    // will see authed=false and swap back to LoginScreen.
+    window.dispatchEvent(new Event('synergy:auth-changed'));
+  };
 
   const navLinkClass = ({ isActive }) =>
     `text-sm font-medium px-3 py-1.5 rounded-md transition ${
@@ -35,7 +43,7 @@ export default function Layout() {
               {username && <>Logged in as <span className="font-medium text-slate-700">{username}</span></>}
             </span>
             <button
-              onClick={logout}
+              onClick={handleSignOut}
               className="text-sm text-slate-500 hover:text-slate-900 transition"
             >
               Sign out

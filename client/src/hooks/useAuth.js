@@ -1,40 +1,39 @@
 // client/src/hooks/useAuth.js
 //
-// Minimal auth hook. Tracks who's logged in across the app —
-// username + userId so chat can render self-vs-other bubbles.
+// Auth state subscriber. The hook does NOT own the login/logout
+// implementation — it only subscribes to global auth state changes.
+// This avoids a class of React Strict Mode bugs where a component's
+// closure over a hook-returned function points at an unmounted
+// instance, causing awaits to hang forever (the symptom: clicking
+// "Continue" → button shows "Logging in..." → no network request,
+// no error, no resolution).
 
 import { useState, useEffect } from 'react';
 import api from '../api/client';
 
 export default function useAuth() {
-  const [username, setUsername] = useState(api.getUsername());
-  const [userId, setUserId] = useState(api.getUserId());
-  const [authed, setAuthed] = useState(api.isAuthenticated());
+  const [state, setState] = useState(() => ({
+    username: api.getUsername(),
+    userId: api.getUserId(),
+    authed: api.isAuthenticated(),
+  }));
 
   useEffect(() => {
-    // Listen for storage changes (e.g. logout in another tab)
-    const onStorage = () => {
-      setUsername(api.getUsername());
-      setUserId(api.getUserId());
-      setAuthed(api.isAuthenticated());
+    const refresh = () => setState({
+      username: api.getUsername(),
+      userId: api.getUserId(),
+      authed: api.isAuthenticated(),
+    });
+
+    // Cross-tab logout / login (storage event) AND same-tab updates
+    // dispatched manually after api.login / api.logout.
+    window.addEventListener('storage', refresh);
+    window.addEventListener('synergy:auth-changed', refresh);
+    return () => {
+      window.removeEventListener('storage', refresh);
+      window.removeEventListener('synergy:auth-changed', refresh);
     };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  async function login(name) {
-    const data = await api.login(name);
-    setUsername(data.username || name);
-    setUserId(data.userId);
-    setAuthed(true);
-  }
-
-  function logout() {
-    api.logout();
-    setUsername(null);
-    setUserId(null);
-    setAuthed(false);
-  }
-
-  return { username, userId, authed, login, logout };
+  return state;
 }

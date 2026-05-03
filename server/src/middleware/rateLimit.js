@@ -1,6 +1,6 @@
 const { client } = require('../db/redis');
 
-const LIMIT = 10;
+const LIMIT = 60;
 const WINDOW = 1;
 
 async function rateLimit(req, res, next) {

@@ -1,12 +1,14 @@
 // client/src/components/LoginScreen.jsx
 //
-// Login form. Calls auth.login() — Redis stores the session.
+// Login form. Calls api.login() directly (not through a hook) so the
+// click handler doesn't close over a stale hook reference under React
+// Strict Mode. After a successful login, dispatches a window event so
+// useAuth subscribers re-read localStorage and re-render the app.
 
 import { useState } from 'react';
-import useAuth from '../hooks/useAuth';
+import api from '../api/client';
 
 export default function LoginScreen() {
-  const { login } = useAuth();
   const [username, setUsername] = useState('makuo');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -16,7 +18,11 @@ export default function LoginScreen() {
     setLoading(true);
     setError(null);
     try {
-      await login(username.trim());
+      await api.login(username.trim());
+      // Tell every useAuth subscriber to re-read localStorage. The
+      // top-level App.jsx will then see authed=true and swap to Routes.
+      window.dispatchEvent(new Event('synergy:auth-changed'));
+      // Don't setLoading(false) on success — App is about to unmount us.
     } catch (err) {
       setError(err.message);
       setLoading(false);

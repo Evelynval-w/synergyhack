@@ -73,12 +73,15 @@ export default function ChatPanel({ teamId, myUserId, members = [] }) {
   }, [teamId]);
 
   // Poll for new messages every POLL_INTERVAL_MS, skipping while
-  // the tab is hidden.
+  // the tab is hidden OR the user has signed out (token cleared).
+  // Without the token check, a signed-out tab keeps hammering the
+  // server with 401s and can saturate the rate limiter.
   useEffect(() => {
     if (forbidden) return;
 
     const tick = async () => {
       if (document.visibilityState !== 'visible') return;
+      if (!localStorage.getItem('synergy_token')) return;
       const lastId = messages.length > 0 ? messages[messages.length - 1].id : '0';
       try {
         const data = await api.get(`/teams/${teamId}/messages?since=${lastId}`);
