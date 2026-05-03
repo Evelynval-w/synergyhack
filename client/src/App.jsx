@@ -1,12 +1,13 @@
 // client/src/App.jsx
 //
-// Top-level router. If unauthenticated, show LoginScreen.
-// If authenticated, show the routed app under Layout.
+// Top-level router. If unauthenticated, show LandingScreen
+// (hero + integrated login). If authenticated, show the routed
+// app under Layout.
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import useAuth from './hooks/useAuth';
 import Layout from './components/Layout';
-import LoginScreen from './components/LoginScreen';
+import LandingScreen from './components/LandingScreen';
 import TeamList from './pages/TeamList';
 import TeamDetail from './pages/TeamDetail';
 import Matches from './pages/Matches';
@@ -19,7 +20,7 @@ export default function App() {
   const { authed } = useAuth();
 
   if (!authed) {
-    return <LoginScreen />;
+    return <LandingScreen />;
   }
 
   return (
