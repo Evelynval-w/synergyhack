@@ -1,6 +1,6 @@
 // client/src/components/Layout.jsx
 //
-// App shell: top nav with branding, navigation, logout.
+// App shell: top nav with branding, navigation tabs, logout.
 // Wraps every page when authenticated.
 
 import { Link, NavLink, Outlet } from 'react-router-dom';
@@ -12,8 +12,7 @@ export default function Layout() {
 
   const handleSignOut = () => {
     api.logout();
-    // Notify every useAuth subscriber to re-read localStorage. App
-    // will see authed=false and swap back to LoginScreen.
+    // Notify every useAuth subscriber to re-read localStorage.
     window.dispatchEvent(new Event('synergy:auth-changed'));
   };
 
@@ -33,9 +32,9 @@ export default function Layout() {
               SynergyHack
             </Link>
             <nav className="flex gap-2">
-              <NavLink to="/teams" className={navLinkClass}>
-                Teams
-              </NavLink>
+              <NavLink to="/teams" className={navLinkClass}>Teams</NavLink>
+              <NavLink to="/people" className={navLinkClass}>People</NavLink>
+              <NavLink to="/messages" className={navLinkClass}>Messages</NavLink>
             </nav>
           </div>
           <div className="flex items-center gap-4">

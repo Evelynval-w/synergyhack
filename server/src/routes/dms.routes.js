@@ -1,31 +1,43 @@
 // server/src/routes/dms.routes.js
 //
-// 1:1 DM routes. Mounted at /dms in index.js, so the full paths become
-// /dms/:peerId/messages. The "from" user is always the authenticated
-// user (req.user.sub); the "to" user is the URL param. The chat service
-// internally builds a sorted-key Redis channel so the same conversation
-// is reachable by both participants.
+// 1:1 DM routes. Mounted at /dms in index.js.
+//   GET  /dms                    — inbox (list of my conversations)
+//   POST /dms/:peerId/messages   — send a DM
+//   GET  /dms/:peerId/messages   — read the conversation with peerId
+//
+// The "from" user is always the authenticated user (req.user.sub).
+// chat.service builds a sorted-key Redis channel internally so the
+// same conversation is reachable from either participant's perspective.
 
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
 const chat = require('../services/chat.service');
+const dmsService = require('../services/dms.service');
 
 const router = express.Router({ mergeParams: true });
 
 /**
+ * GET /dms
+ * Inbox — one entry per distinct DM channel I'm part of, with the
+ * peer's user info and the last message. Sorted by recency.
+ */
+router.get('/', requireAuth, async (req, res) => {
+  try {
+    const threads = await dmsService.listUserThreads(req.user.sub);
+    res.json(threads);
+  } catch (err) {
+    console.error('list DMs failed:', err);
+    res.status(500).json({ error: 'Inbox failed' });
+  }
+});
+
+/**
  * POST /dms/:peerId/messages
  * Body: { body: string }
- * 201 → { id: streamId }
- * 400 → empty body, or DM-to-self
- * 500 → unexpected error
  */
 router.post('/:peerId/messages', requireAuth, async (req, res) => {
   try {
-    const id = await chat.sendDM(
-      req.user.sub,
-      req.params.peerId,
-      req.body.body
-    );
+    const id = await chat.sendDM(req.user.sub, req.params.peerId, req.body.body);
     res.status(201).json({ id });
   } catch (e) {
     if (e.message === 'Empty message' || e.message === 'Cannot DM yourself') {
@@ -38,11 +50,9 @@ router.post('/:peerId/messages', requireAuth, async (req, res) => {
 
 /**
  * GET /dms/:peerId/messages?since=<streamId>
- * 200 → [{ id, from, to, body, ts }, ...]
- *
- * Returns the conversation between the authenticated user and peerId,
- * regardless of which user sent which message. The sorted-key channel
- * design means both participants see the same stream.
+ * Returns the conversation between the authenticated user and peerId.
+ * Both participants see the same stream because the channel uses a
+ * sorted-key (chat:dm:{sortedA}:{sortedB}).
  */
 router.get('/:peerId/messages', requireAuth, async (req, res) => {
   const since = req.query.since || '0';
