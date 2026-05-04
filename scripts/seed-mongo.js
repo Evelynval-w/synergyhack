@@ -6,14 +6,6 @@
 //
 // Run with: node scripts/seed-mongo.js
 // Idempotent: drops each collection before inserting.
-//
-// The script also flattens user.skills (array of objects) into a parallel
-// `skill_names` (array of strings) so the compound text index can include
-// skill names — Mongo's text index can't directly index an array of objects.
-//
-// Every seeded user gets a baked-in bcrypt hash for the demo password
-// (DEMO_PASSWORD constant below) so the new bcrypt-backed login flow
-// works against fixture accounts out of the box.
 
 require('dotenv').config({
   path: require('path').join(__dirname, '..', '.env'),
@@ -21,14 +13,9 @@ require('dotenv').config({
 
 const fs = require('fs');
 const path = require('path');
-// bcryptjs is a server dependency; resolve it from server/node_modules
-// since this script lives at the repo root and has no node_modules of
-// its own.
 const bcrypt = require(path.join(__dirname, '..', 'server', 'node_modules', 'bcryptjs'));
 const mongo = require('../server/src/db/mongo');
 
-// Documented demo password — also called out in the README so testers
-// can sign in to seeded accounts immediately.
 const DEMO_PASSWORD = 'password123';
 
 function loadFixture(name) {
@@ -37,14 +24,6 @@ function loadFixture(name) {
   );
 }
 
-/**
- * Flattens skills:[{name,...}] -> skill_names:[name,...] alongside the
- * original. Keeps full skills shape for hydration; adds the flat field
- * so the text index can pick up skill names.
- *
- * Also stamps in the bcrypt hash of the demo password so seeded users
- * can log in via the real bcrypt-backed flow.
- */
 function prepareUser(user, demoHash) {
   const skill_names = (user.skills || []).map(s => s.name);
   return {
@@ -65,13 +44,10 @@ async function dropAndInsert(db, collectionName, docs) {
 
 async function createIndexes(db) {
   // --- users ---
-  // Unique constraints for login + register flow
   await db.collection('users').createIndex({ username: 1 }, { unique: true });
   await db.collection('users').createIndex({ email: 1 }, { unique: true });
 
   // Compound text index for bio search (Phase 5).
-  // Weights bias the score: a hit on a skill name matters more than
-  // the same word appearing in someone's bio.
   await db.collection('users').createIndex(
     { skill_names: 'text', role: 'text', bio: 'text' },
     {
@@ -84,6 +60,17 @@ async function createIndexes(db) {
   await db.collection('teams').createIndex({ hackathonId: 1 });
   await db.collection('teams').createIndex({ members: 1 });
 
+  // Text index for team search (Phase 13). Name weighted higher than
+  // description so 'climate' surfaces ClimateStack above teams that
+  // merely mention climate in their description.
+  await db.collection('teams').createIndex(
+    { name: 'text', description: 'text' },
+    {
+      weights: { name: 10, description: 3 },
+      name: 'team_search_idx',
+    }
+  );
+
   // --- hackathons ---
   await db.collection('hackathons').createIndex({ startDate: 1 });
 
@@ -91,12 +78,10 @@ async function createIndexes(db) {
   await db.collection('past_projects').createIndex({ rating: -1 });
   await db.collection('past_projects').createIndex({ hackathonId: 1 });
 
-  // --- messages ---
-  // Phase 6: chat mirror. Compound (channel, ts) supports the most
-  // common query pattern: "messages for channel X ordered by time".
+  // --- messages (Phase 6 chat mirror) ---
   await db.collection('messages').createIndex({ channel: 1, ts: 1 });
 
-  console.log('  9 indexes created across 5 collections');
+  console.log('  10 indexes created across 5 collections');
 }
 
 async function run() {
@@ -119,7 +104,6 @@ async function run() {
   await dropAndInsert(db, 'hackathons', hackathons);
   await dropAndInsert(db, 'past_projects', pastProjects);
 
-  // Wipe the messages collection too — fresh demo state.
   await db.collection('messages').deleteMany({});
   console.log('  messages: wiped');
 
