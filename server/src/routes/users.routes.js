@@ -1,9 +1,15 @@
 // server/src/routes/users.routes.js
 //
-// User read endpoints.
-//   GET /users/search?q=...  — full-text search via Mongo text index
-//   GET /users?skip=&limit=  — paginated browse list
-//   GET /users/:id           — single user profile + past projects
+// User read + write endpoints.
+//   GET   /users/search?q=...  — full-text search via Mongo text index
+//   GET   /users               — paginated browse list
+//   GET   /users/me            — own profile (includes email)
+//   PATCH /users/me            — update own profile
+//   GET   /users/:id           — public profile (no email)
+//
+// IMPORTANT: route order matters. /search and /me must come BEFORE
+// /:id, otherwise Express matches /:id first and the literal paths
+// never get hit.
 
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
@@ -11,11 +17,6 @@ const users = require('../services/users.service');
 
 const router = express.Router();
 
-/**
- * GET /users/search?q=...&limit=20
- * Full-text search across user bios, roles, and skill names.
- * NOTE: must be defined BEFORE /:id, otherwise Express matches /:id first.
- */
 router.get('/search', requireAuth, async (req, res) => {
   try {
     const q = req.query.q;
@@ -31,10 +32,6 @@ router.get('/search', requireAuth, async (req, res) => {
   }
 });
 
-/**
- * GET /users?skip=0&limit=20
- * Paginated list of users for the browse view. Sorted alphabetically.
- */
 router.get('/', requireAuth, async (req, res) => {
   try {
     const data = await users.listUsers({
@@ -49,16 +46,50 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 /**
+ * GET /users/me
+ * Own profile, including email — for pre-filling the editor.
+ */
+router.get('/me', requireAuth, async (req, res) => {
+  try {
+    const user = await users.getOwnProfile(req.user.sub);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    console.error('GET /users/me failed:', err);
+    res.status(500).json({ error: 'Profile failed' });
+  }
+});
+
+/**
+ * PATCH /users/me
+ * Updates the authed user's own profile. Only EDITABLE_FIELDS in
+ * users.service are honored; everything else is silently dropped
+ * so a malicious client can't sneak in password_hash, _id, etc.
+ */
+router.patch('/me', requireAuth, async (req, res) => {
+  try {
+    const updated = await users.updateOwnProfile(req.user.sub, req.body || {});
+    res.json(updated);
+  } catch (err) {
+    if (err.code === 'VALIDATION') {
+      return res.status(400).json({
+        error: 'Validation failed',
+        fields: err.fields,
+      });
+    }
+    console.error('PATCH /users/me failed:', err);
+    res.status(500).json({ error: 'Update failed' });
+  }
+});
+
+/**
  * GET /users/:id
- * Returns a single user's public profile + the past projects they
- * worked on (via a Mongo $lookup), ready for the UserProfile page.
+ * Public profile — does NOT include email.
  */
 router.get('/:id', requireAuth, async (req, res) => {
   try {
     const user = await users.getUserProfile(req.params.id);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
   } catch (err) {
     console.error('user profile failed:', err);

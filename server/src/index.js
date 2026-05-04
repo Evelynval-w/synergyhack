@@ -28,6 +28,7 @@ const teamRoutes = require('./routes/teams.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
 const usersRoutes = require('./routes/users.routes');
 const dmsRoutes = require('./routes/dms.routes');
+const skillsRoutes = require('./routes/skills.routes');
 
 app.use('/auth', authRoutes);
 app.use('/heartbeat', heartbeatRoutes);
@@ -37,6 +38,7 @@ app.use('/teams', teamRoutes);
 app.use('/analytics', analyticsRoutes);
 app.use('/users', usersRoutes);
 app.use('/dms', dmsRoutes);           // mounts /dms/:peerId/messages
+app.use('/skills', skillsRoutes);
 
 // === Health check ===
 // Pings each datastore so a single endpoint tells us if the stack is healthy.

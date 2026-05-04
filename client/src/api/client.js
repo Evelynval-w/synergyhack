@@ -1,7 +1,7 @@
 // client/src/api/client.js
 //
 // Centralized fetch wrapper. Auto-attaches the JWT from localStorage
-// to every request that needs it. Pages don't need to know about auth headers.
+// to every request that needs it.
 
 const API_BASE = 'http://localhost:3000';
 
@@ -45,16 +45,12 @@ async function request(path, options = {}) {
   if (!res.ok) {
     const text = await res.text();
     let payload = null;
-    try {
-      payload = JSON.parse(text);
-    } catch {
-      // Not JSON
-    }
+    try { payload = JSON.parse(text); } catch { /* not json */ }
 
     const err = new Error(payload?.error || `Request failed: ${res.status}`);
     err.status = res.status;
-    err.fields = payload?.fields;     // server-side per-field errors
-    err.field = payload?.field;       // single conflicting field name
+    err.fields = payload?.fields;
+    err.field = payload?.field;
     throw err;
   }
 
@@ -64,8 +60,7 @@ async function request(path, options = {}) {
 const api = {
   get: (path) => request(path),
   post: (path, body) => request(path, { method: 'POST', body: JSON.stringify(body) }),
-
-  // --- Auth helpers ---
+  patch: (path, body) => request(path, { method: 'PATCH', body: JSON.stringify(body) }),
 
   async login(username, password) {
     const data = await request('/auth/login', {

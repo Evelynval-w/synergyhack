@@ -1,6 +1,6 @@
 // client/src/components/Layout.jsx
 //
-// App shell: top nav with branding, navigation tabs, logout.
+// App shell: top nav with branding, navigation tabs, profile link, logout.
 // Wraps every page when authenticated.
 
 import { Link, NavLink, Outlet } from 'react-router-dom';
@@ -8,11 +8,10 @@ import useAuth from '../hooks/useAuth';
 import api from '../api/client';
 
 export default function Layout() {
-  const { username } = useAuth();
+  const { username, userId } = useAuth();
 
   const handleSignOut = () => {
     api.logout();
-    // Notify every useAuth subscriber to re-read localStorage.
     window.dispatchEvent(new Event('synergy:auth-changed'));
   };
 
@@ -37,10 +36,21 @@ export default function Layout() {
               <NavLink to="/messages" className={navLinkClass}>Messages</NavLink>
             </nav>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-500">
-              {username && <>Logged in as <span className="font-medium text-slate-700">{username}</span></>}
-            </span>
+          <div className="flex items-center gap-3">
+            {username && userId && (
+              <Link
+                to={`/users/${userId}`}
+                className="flex items-center gap-2 text-sm px-2 py-1 rounded-md hover:bg-slate-100 transition"
+                title="View / edit your profile"
+              >
+                <span className="h-7 w-7 rounded-full bg-emerald-100 flex items-center justify-center font-semibold text-emerald-700 text-xs">
+                  {username[0].toUpperCase()}
+                </span>
+                <span className="font-medium text-slate-700 capitalize">
+                  {username}
+                </span>
+              </Link>
+            )}
             <button
               onClick={handleSignOut}
               className="text-sm text-slate-500 hover:text-slate-900 transition"

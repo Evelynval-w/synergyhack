@@ -1,3 +1,5 @@
+// server/src/services/graph-sync.service.js
+//
 // The single cross-DB sync point. Every operation that touches both
 // MongoDB and Neo4j goes through here. Routes should not call
 // neo4j.session() directly except for read-only graph queries
@@ -11,8 +13,6 @@ const { session } = require('../db/neo4j');
 /**
  * Mirrors a user from MongoDB into Neo4j as a User node.
  * Called after mongo user.service.createUser().
- *
- * @param {object} mongoDoc - the MongoDB user document with _id, username
  */
 async function syncUser(mongoDoc) {
   const s = session();
@@ -30,14 +30,9 @@ async function syncUser(mongoDoc) {
   }
 }
 
-/**
- * Mirrors a team from MongoDB into Neo4j as a Team node,
- * plus connects it to its Hackathon via PARTICIPATES_IN.
- */
 async function syncTeam(mongoDoc) {
   const s = session();
   try {
-    // Create the Team node
     await s.run(
       `MERGE (t:Team {id: $id})
        SET t.name = $name`,
@@ -47,7 +42,6 @@ async function syncTeam(mongoDoc) {
       }
     );
 
-    // Ensure Hackathon node exists and connect
     if (mongoDoc.hackathonId) {
       await s.run(
         `MERGE (h:Hackathon {id: $hackathonId})
@@ -56,7 +50,7 @@ async function syncTeam(mongoDoc) {
          MERGE (t)-[:PARTICIPATES_IN]->(h)`,
         {
           hackathonId: mongoDoc.hackathonId.toString(),
-                 teamId: mongoDoc._id.toString(),
+          teamId: mongoDoc._id.toString(),
         }
       );
     }
@@ -65,10 +59,6 @@ async function syncTeam(mongoDoc) {
   }
 }
 
-/**
- * Adds a user to a team via a MEMBER_OF edge.
- * Called from team.service.joinTeam() and from createTeam (for the creator).
- */
 async function joinTeam(userId, teamId) {
   const s = session();
   try {
@@ -84,9 +74,6 @@ async function joinTeam(userId, teamId) {
   }
 }
 
-/**
- * Removes a MEMBER_OF edge (user leaves team).
- */
 async function leaveTeam(userId, teamId) {
   const s = session();
   try {
@@ -100,24 +87,78 @@ async function leaveTeam(userId, teamId) {
   }
 }
 
-/**
- * Adds a skill to a user. Delegates to skill.service for consistency.
- */
 async function addSkill(userId, skillName, level = 3, years = 0) {
   const skillService = require('./skill.service');
   await skillService.addUserSkill(userId, skillName, level, years);
 }
 
 /**
- * Records a past collaboration between two users.
- * Used when seeding past_projects.
+ * Reconciles a user's HAS_SKILL edges in Neo4j with the canonical
+ * skill list from Mongo. Called by users.service.updateOwnProfile
+ * whenever the skills array changes.
+ *
+ * Strategy: diff current skills vs new skills, then:
+ *   - Remove edges for skills that disappeared from the new list
+ *   - Add edges for skills that are new
+ *   - Update level/years on edges that already exist (skill name
+ *     unchanged but proficiency edited)
+ *
+ * This is safer than a "delete all + re-add" approach because it
+ * preserves edge metadata if any extra fields ever get added later.
+ *
+ * @param {string} userId
+ * @param {Array<{name:string, level:number, years:number}>} newSkills
  */
+async function syncUserSkills(userId, newSkills) {
+  const s = session();
+  try {
+    // 1. Read current HAS_SKILL edges
+    const currentResult = await s.run(
+      `MATCH (u:User {id: $userId})-[r:HAS_SKILL]->(sk:Skill)
+       RETURN sk.name AS name`,
+      { userId }
+    );
+    const currentNames = new Set(currentResult.records.map(r => r.get('name')));
+    const newNames = new Set(newSkills.map(s => s.name));
+
+    // 2. Remove edges that are gone from the new list
+    const toRemove = [...currentNames].filter(n => !newNames.has(n));
+    if (toRemove.length > 0) {
+      await s.run(
+        `MATCH (u:User {id: $userId})-[r:HAS_SKILL]->(sk:Skill)
+         WHERE sk.name IN $toRemove
+         DELETE r`,
+        { userId, toRemove }
+      );
+    }
+
+    // 3. MERGE every skill in the new list — adds new ones, updates
+    //    level/years on existing ones. Skills not in the catalogue
+    //    (Skill nodes don't exist) are silently skipped by MATCH.
+    for (const skill of newSkills) {
+      await s.run(
+        `MATCH (sk:Skill {name: $name})
+         MERGE (u:User {id: $userId})
+         MERGE (u)-[r:HAS_SKILL]->(sk)
+         SET r.level = $level, r.years = $years`,
+        {
+          userId,
+          name: skill.name,
+          level: skill.level || 3,
+          years: skill.years || 0,
+        }
+      );
+    }
+  } finally {
+    await s.close();
+  }
+}
+
 async function recordTeamedWith(userAId, userBId, rating, projectId) {
   const s = session();
   try {
-    // Symmetric — store edge both ways so traversal works either direction
     await s.run(
-            `MATCH (a:User {id: $a})
+      `MATCH (a:User {id: $a})
        MATCH (b:User {id: $b})
        MERGE (a)-[r1:TEAMED_WITH]->(b)
        SET r1.rating = $rating, r1.projectId = $projectId
@@ -136,6 +177,6 @@ module.exports = {
   joinTeam,
   leaveTeam,
   addSkill,
+  syncUserSkills,
   recordTeamedWith,
 };
-
