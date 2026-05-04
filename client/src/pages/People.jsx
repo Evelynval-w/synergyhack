@@ -1,15 +1,12 @@
 // client/src/pages/People.jsx
 //
-// Browse + search view for all users. Two states:
-//   - empty search: shows all users alphabetically (GET /users)
-//   - active search: shows ranked results (GET /users/search?q=)
-// The search uses Mongo's compound text index (skill_names:10,
-// role:5, bio:3) so typing "react designer" ranks React-skilled
-// designers above someone who just mentions react in their bio.
+// Browse + search view for all users. Skeleton loaders on first
+// fetch, EmptyState for no results, ErrorState with retry on failure.
 
 import { useState, useEffect } from 'react';
 import api from '../api/client';
 import UserCard from '../components/UserCard';
+import { CardSkeleton, EmptyState, ErrorState } from '../components/ui/States';
 
 export default function People() {
   const [query, setQuery] = useState('');
@@ -19,9 +16,7 @@ export default function People() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch the list — either browse-all or search results, depending
-  // on whether a non-empty query was submitted.
-  useEffect(() => {
+  const fetchUsers = () => {
     setLoading(true);
     setError(null);
 
@@ -29,7 +24,7 @@ export default function People() {
       ? api.get(`/users/search?q=${encodeURIComponent(submittedQuery)}&limit=50`)
       : api.get('/users?limit=50');
 
-    fetcher
+    return fetcher
       .then(data => {
         if (submittedQuery) {
           setUsers(data.results || []);
@@ -41,6 +36,11 @@ export default function People() {
       })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submittedQuery]);
 
   const handleSubmit = (e) => {
@@ -62,7 +62,6 @@ export default function People() {
         </p>
       </div>
 
-      {/* Search bar */}
       <form onSubmit={handleSubmit} className="mb-6 flex gap-2">
         <input
           type="text"
@@ -88,28 +87,30 @@ export default function People() {
         )}
       </form>
 
-      {/* Active search indicator */}
-      {submittedQuery && !loading && (
+      {submittedQuery && !loading && !error && (
         <p className="text-sm text-slate-500 mb-4">
           {users.length} {users.length === 1 ? 'result' : 'results'} for "<span className="text-slate-700 font-medium">{submittedQuery}</span>"
         </p>
       )}
 
-      {/* Body */}
       {loading ? (
-        <div className="text-center text-slate-500 py-12">Loading...</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => <CardSkeleton key={i} />)}
+        </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 text-sm text-red-700">
-          Error: {error}
-        </div>
+        <ErrorState
+          title="Couldn't load people"
+          body={error}
+          onRetry={fetchUsers}
+        />
       ) : users.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-lg p-8 text-center">
-          <p className="text-sm text-slate-500">
-            {submittedQuery
-              ? `No people match "${submittedQuery}". Try a different search term.`
-              : 'No users yet.'}
-          </p>
-        </div>
+        <EmptyState
+          icon="◌"
+          title={submittedQuery ? `No matches for "${submittedQuery}"` : 'No people yet'}
+          body={submittedQuery
+            ? 'Try a different search — skills, role, or a phrase from someone\'s bio.'
+            : 'Users will appear here once they sign up.'}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {users.map(u => (

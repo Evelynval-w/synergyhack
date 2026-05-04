@@ -112,6 +112,23 @@ router.get('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Team not found' });
     }
 
+    // Enrich Neo4j member list with role from Mongo. Members come back
+    // from the graph as { id, username }; we need role for display on
+    // TeamDetail. Single batch lookup, no N+1.
+    let enrichedMembers = graphSide.members;
+    if (graphSide.members.length > 0) {
+      const memberIds = graphSide.members.map(m => m.id);
+      const userDocs = await db().collection('users').find(
+        { _id: { $in: memberIds } },
+        { projection: { _id: 1, role: 1 } }
+      ).toArray();
+      const roleById = Object.fromEntries(userDocs.map(u => [u._id, u.role]));
+      enrichedMembers = graphSide.members.map(m => ({
+        ...m,
+        role: roleById[m.id] || '',
+      }));
+    }
+
     res.json({
       id: mongoSide._id,
       name: mongoSide.name,
@@ -120,7 +137,7 @@ router.get('/:id', requireAuth, async (req, res) => {
       createdBy: mongoSide.createdBy,
       createdAt: mongoSide.createdAt,
       hackathon: mongoSide.hackathon || null,
-      members: graphSide.members,
+      members: enrichedMembers,
       skills: graphSide.skills,
     });
   } catch (err) {

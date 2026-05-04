@@ -18,6 +18,7 @@ import SkillChip from '../components/SkillChip';
 import ChatPanel from '../components/ChatPanel';
 import RequestJoinButton from '../components/RequestJoinButton';
 import PendingRequests from '../components/PendingRequests';
+import { Skeleton, ErrorState } from '../components/ui/States';
 import useAuth from '../hooks/useAuth';
 
 function formatDateRange(start, end) {
@@ -49,15 +50,45 @@ export default function TeamDetail() {
   }, [fetchTeam]);
 
   if (loading) {
-    return <div className="text-center text-slate-500 py-12">Loading team...</div>;
+    return (
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-3">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-8 w-2/3" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-4/5" />
+            </div>
+            <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-2">
+              <Skeleton className="h-4 w-24 mb-3" />
+              <div className="flex gap-2 flex-wrap">
+                {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-6 w-16 rounded-full" />)}
+              </div>
+            </div>
+          </div>
+          <div className="lg:col-span-1">
+            <Skeleton className="h-[600px] rounded-lg" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
     return (
       <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 text-sm text-red-700">
-          Error: {error}
-        </div>
+        <Link
+          to="/teams"
+          className="text-sm text-slate-500 hover:text-slate-700 mb-4 inline-block"
+        >
+          ← All teams
+        </Link>
+        <ErrorState
+          title="Couldn't load team"
+          body={error}
+          onRetry={fetchTeam}
+        />
       </div>
     );
   }
@@ -180,6 +211,9 @@ export default function TeamDetail() {
                     <span className="text-sm font-medium text-slate-900 capitalize">
                       {m.username}
                     </span>
+                    {m.role && (
+                      <span className="text-xs text-slate-500">{m.role}</span>
+                    )}
                   </Link>
                 ))}
               </div>

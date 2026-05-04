@@ -3,15 +3,22 @@
 // App shell: top nav with branding, navigation tabs, profile link, logout.
 // Wraps every page when authenticated.
 
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import api from '../api/client';
 
 export default function Layout() {
   const { username, userId } = useAuth();
+  const navigate = useNavigate();
 
   const handleSignOut = () => {
     api.logout();
+    // Move route back to root BEFORE dispatching the auth event so
+    // the LandingScreen replaces the page cleanly. Without this,
+    // signing out from /messages or /dms/:peerId would leave the
+    // URL on a deep route while the LandingScreen renders, and a
+    // refresh would 404 / fall through to the catch-all redirect.
+    navigate('/', { replace: true });
     window.dispatchEvent(new Event('synergy:auth-changed'));
   };
 

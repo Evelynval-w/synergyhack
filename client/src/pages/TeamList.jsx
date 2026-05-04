@@ -1,15 +1,12 @@
 // client/src/pages/TeamList.jsx
 //
-// Browse + search view for all teams. Two modes:
-//   - default: alphabetical browse
-//   - active query: text-relevance ranked search via team_search_idx
-//
-// Cards show the team's pitch (description), the hackathon they're
-// for, and a member count. Click navigates to TeamDetail.
+// Browse + search teams. Loading shows skeleton cards in a grid;
+// empty results show a real EmptyState; errors are contained.
 
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
+import { CardSkeleton, EmptyState, ErrorState } from '../components/ui/States';
 
 export default function TeamList() {
   const [query, setQuery] = useState('');
@@ -18,16 +15,21 @@ export default function TeamList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const fetchTeams = () => {
     setLoading(true);
     setError(null);
     const path = submittedQuery
       ? `/teams?q=${encodeURIComponent(submittedQuery)}`
       : '/teams';
-    api.get(path)
+    return api.get(path)
       .then(data => setTeams(data.results || []))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchTeams();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submittedQuery]);
 
   const handleSubmit = (e) => {
@@ -74,26 +76,35 @@ export default function TeamList() {
         )}
       </form>
 
-      {submittedQuery && !loading && (
+      {submittedQuery && !loading && !error && (
         <p className="text-sm text-slate-500 mb-4">
           {teams.length} {teams.length === 1 ? 'result' : 'results'} for "<span className="text-slate-700 font-medium">{submittedQuery}</span>"
         </p>
       )}
 
       {loading ? (
-        <div className="text-center text-slate-500 py-12">Loading...</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 text-sm text-red-700">
-          Error: {error}
-        </div>
+        <ErrorState
+          title="Couldn't load teams"
+          body={error}
+          onRetry={fetchTeams}
+        />
       ) : teams.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-lg p-8 text-center">
-          <p className="text-sm text-slate-500">
-            {submittedQuery
-              ? `No teams match "${submittedQuery}". Try a different search.`
-              : 'No teams yet.'}
-          </p>
-        </div>
+        <EmptyState
+          icon="⚲"
+          title={submittedQuery ? `No teams match "${submittedQuery}"` : 'No teams yet'}
+          body={submittedQuery
+            ? 'Try a different search term, or clear the search to browse all teams.'
+            : 'Teams will appear here once they\'re seeded.'}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {teams.map(team => (
@@ -120,7 +131,7 @@ function TeamCard({ team }) {
       )}
 
       {team.description && (
-        <p className="text-sm text-slate-600 mt-3 leading-relaxed line-clamp-3">
+        <p className="text-sm text-slate-600 mt-3 leading-relaxed line-clamp-2">
           {team.description}
         </p>
       )}

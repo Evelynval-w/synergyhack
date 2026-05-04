@@ -18,6 +18,7 @@ import api from '../api/client';
 import useAuth from '../hooks/useAuth';
 import SkillChip from '../components/SkillChip';
 import SkillEditor from '../components/SkillEditor';
+import { Skeleton, ErrorState } from '../components/ui/States';
 
 const ROLES = [
   '', // empty = not set
@@ -60,15 +61,46 @@ export default function UserProfile() {
   }, [fetchProfile]);
 
   if (loading) {
-    return <div className="text-center text-slate-500 py-12">Loading profile...</div>;
+    return (
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <Skeleton className="h-3 w-20 mb-4" />
+        <div className="bg-white rounded-lg border border-slate-200 p-6 mb-6">
+          <div className="flex items-start gap-4">
+            <Skeleton className="h-16 w-16 rounded-full" />
+            <div className="flex-1 space-y-3">
+              <Skeleton className="h-7 w-1/3" />
+              <Skeleton className="h-4 w-1/4" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-4/5" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg border border-slate-200 p-6 mb-6 space-y-3">
+          <Skeleton className="h-4 w-24 mb-3" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-16 rounded-md" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
     return (
       <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 text-sm text-red-700">
-          {error}
-        </div>
+        <Link
+          to="/people"
+          className="text-sm text-slate-500 hover:text-slate-700 mb-4 inline-block"
+        >
+          ← All people
+        </Link>
+        <ErrorState
+          title="Couldn't load profile"
+          body={error}
+          onRetry={fetchProfile}
+        />
       </div>
     );
   }

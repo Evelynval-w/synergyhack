@@ -1,19 +1,13 @@
 // client/src/pages/Messages.jsx
 //
-// DM inbox. Lists every distinct DM channel involving the current user,
-// sorted by most-recent activity. Each row shows the peer (username +
-// role), a preview of the last message, and a relative timestamp.
-//
-// Backed by GET /dms — a single Mongo aggregate that groups the
-// `messages` mirror by channel, picks the latest per channel, and
-// $lookups the peer user. Streams alone can't answer "all my
-// conversations" (that's a cross-channel query); this is exactly
-// what the Mongo mirror earns its place doing.
+// DM inbox. Lists every distinct DM channel involving the current
+// user, sorted by recency.
 
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
 import useAuth from '../hooks/useAuth';
+import { Skeleton, EmptyState, ErrorState } from '../components/ui/States';
 
 function formatRelativeTime(iso) {
   const ts = new Date(iso).getTime();
@@ -34,13 +28,17 @@ export default function Messages() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const fetchThreads = () => {
     setLoading(true);
     setError(null);
-    api.get('/dms')
+    return api.get('/dms')
       .then(setThreads)
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchThreads();
   }, []);
 
   return (
@@ -53,21 +51,29 @@ export default function Messages() {
       </div>
 
       {loading ? (
-        <div className="text-center text-slate-500 py-12">Loading...</div>
+        <div className="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="px-5 py-4 flex items-start gap-3">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-3 w-3/4" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 text-sm text-red-700">
-          {error}
-        </div>
+        <ErrorState
+          title="Couldn't load messages"
+          body={error}
+          onRetry={fetchThreads}
+        />
       ) : threads.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-lg p-8 text-center">
-          <p className="text-sm text-slate-500">
-            No conversations yet. Find someone in{' '}
-            <Link to="/people" className="text-emerald-700 hover:underline">
-              People
-            </Link>
-            {' '}and click Message.
-          </p>
-        </div>
+        <EmptyState
+          icon="✉"
+          title="No conversations yet"
+          body={<>Find someone in <Link to="/people" className="text-emerald-700 hover:underline font-medium">People</Link> and click Message.</>}
+        />
       ) : (
         <div className="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100">
           {threads.map(t => {

@@ -148,9 +148,12 @@ export default function DMThread() {
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
           {messages.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-8">
-              No messages yet. Say hi.
-            </p>
+            <div className="flex flex-col items-center justify-center h-full text-center px-4">
+              <div className="text-2xl text-slate-300 mb-2" aria-hidden="true">✦</div>
+              <p className="text-sm text-slate-400">
+                No messages yet. Say hi.
+              </p>
+            </div>
           ) : (
             messages.map(msg => {
               const isMe = msg.from === myUserId;
