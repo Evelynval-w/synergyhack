@@ -10,6 +10,10 @@
 // The script also flattens user.skills (array of objects) into a parallel
 // `skill_names` (array of strings) so the compound text index can include
 // skill names — Mongo's text index can't directly index an array of objects.
+//
+// Every seeded user gets a baked-in bcrypt hash for the demo password
+// (DEMO_PASSWORD constant below) so the new bcrypt-backed login flow
+// works against fixture accounts out of the box.
 
 require('dotenv').config({
   path: require('path').join(__dirname, '..', '.env'),
@@ -17,7 +21,15 @@ require('dotenv').config({
 
 const fs = require('fs');
 const path = require('path');
+// bcryptjs is a server dependency; resolve it from server/node_modules
+// since this script lives at the repo root and has no node_modules of
+// its own.
+const bcrypt = require(path.join(__dirname, '..', 'server', 'node_modules', 'bcryptjs'));
 const mongo = require('../server/src/db/mongo');
+
+// Documented demo password — also called out in the README so testers
+// can sign in to seeded accounts immediately.
+const DEMO_PASSWORD = 'password123';
 
 function loadFixture(name) {
   return JSON.parse(
@@ -29,15 +41,21 @@ function loadFixture(name) {
  * Flattens skills:[{name,...}] -> skill_names:[name,...] alongside the
  * original. Keeps full skills shape for hydration; adds the flat field
  * so the text index can pick up skill names.
+ *
+ * Also stamps in the bcrypt hash of the demo password so seeded users
+ * can log in via the real bcrypt-backed flow.
  */
-function withFlattenedSkillNames(user) {
+function prepareUser(user, demoHash) {
   const skill_names = (user.skills || []).map(s => s.name);
-  return { ...user, skill_names };
+  return {
+    ...user,
+    skill_names,
+    password_hash: demoHash,
+  };
 }
 
 async function dropAndInsert(db, collectionName, docs) {
   const col = db.collection(collectionName);
-  // drop() throws if the collection doesn't exist; deleteMany works either way
   await col.deleteMany({});
   if (docs.length > 0) {
     await col.insertMany(docs, { ordered: true });
@@ -47,7 +65,7 @@ async function dropAndInsert(db, collectionName, docs) {
 
 async function createIndexes(db) {
   // --- users ---
-  // Unique constraints for login + future register flow
+  // Unique constraints for login + register flow
   await db.collection('users').createIndex({ username: 1 }, { unique: true });
   await db.collection('users').createIndex({ email: 1 }, { unique: true });
 
@@ -86,8 +104,12 @@ async function run() {
   const db = await mongo.connect();
   console.log(`  connected to db: ${db.databaseName}`);
 
+  console.log(`Hashing demo password (this takes ~half a second)...`);
+  const demoHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+
   console.log('Seeding collections...');
-  const users = loadFixture('users.json').map(withFlattenedSkillNames);
+  const rawUsers = loadFixture('users.json');
+  const users = rawUsers.map(u => prepareUser(u, demoHash));
   const teams = loadFixture('teams.json');
   const hackathons = loadFixture('hackathons.json');
   const pastProjects = loadFixture('past_projects.json');
@@ -104,6 +126,7 @@ async function run() {
   console.log('Creating indexes...');
   await createIndexes(db);
 
+  console.log(`\nDemo accounts now sign in with password: ${DEMO_PASSWORD}`);
   console.log('Done.');
   await mongo.close();
 }

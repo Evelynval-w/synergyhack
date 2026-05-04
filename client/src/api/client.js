@@ -10,11 +10,8 @@ function getToken() {
 }
 
 function setToken(token) {
-  if (token) {
-    localStorage.setItem('synergy_token', token);
-  } else {
-    localStorage.removeItem('synergy_token');
-  }
+  if (token) localStorage.setItem('synergy_token', token);
+  else localStorage.removeItem('synergy_token');
 }
 
 function getUsername() {
@@ -22,11 +19,8 @@ function getUsername() {
 }
 
 function setUsername(username) {
-  if (username) {
-    localStorage.setItem('synergy_username', username);
-  } else {
-    localStorage.removeItem('synergy_username');
-  }
+  if (username) localStorage.setItem('synergy_username', username);
+  else localStorage.removeItem('synergy_username');
 }
 
 function getUserId() {
@@ -34,11 +28,8 @@ function getUserId() {
 }
 
 function setUserId(userId) {
-  if (userId) {
-    localStorage.setItem('synergy_user_id', userId);
-  } else {
-    localStorage.removeItem('synergy_user_id');
-  }
+  if (userId) localStorage.setItem('synergy_user_id', userId);
+  else localStorage.removeItem('synergy_user_id');
 }
 
 async function request(path, options = {}) {
@@ -53,14 +44,18 @@ async function request(path, options = {}) {
 
   if (!res.ok) {
     const text = await res.text();
-    let message = `Request failed: ${res.status}`;
+    let payload = null;
     try {
-      const json = JSON.parse(text);
-      if (json.error) message = json.error;
+      payload = JSON.parse(text);
     } catch {
-      // Not JSON, use the status code message
+      // Not JSON
     }
-    throw new Error(message);
+
+    const err = new Error(payload?.error || `Request failed: ${res.status}`);
+    err.status = res.status;
+    err.fields = payload?.fields;     // server-side per-field errors
+    err.field = payload?.field;       // single conflicting field name
+    throw err;
   }
 
   return res.json();
@@ -70,14 +65,24 @@ const api = {
   get: (path) => request(path),
   post: (path, body) => request(path, { method: 'POST', body: JSON.stringify(body) }),
 
-  // Auth helpers
-  async login(username) {
+  // --- Auth helpers ---
+
+  async login(username, password) {
     const data = await request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ username }),
+      body: JSON.stringify({ username, password }),
     });
-    // Server returns { token, userId, username } since the Phase 6 auth fix.
-    // Capture all three so the chat UI knows who "me" is when rendering.
+    setToken(data.token);
+    setUsername(data.username || username);
+    setUserId(data.userId);
+    return data;
+  },
+
+  async register({ username, email, password, role, bio }) {
+    const data = await request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ username, email, password, role, bio }),
+    });
     setToken(data.token);
     setUsername(data.username || username);
     setUserId(data.userId);
