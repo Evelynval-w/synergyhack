@@ -81,7 +81,24 @@ async function createIndexes(db) {
   // --- messages (Phase 6 chat mirror) ---
   await db.collection('messages').createIndex({ channel: 1, ts: 1 });
 
-  console.log('  10 indexes created across 5 collections');
+  // --- team_requests (Phase 14 join-request workflow) ---
+  // Partial unique index: at most one PENDING request per (team, user).
+  // Accepted/rejected requests don't conflict, so a user can re-request
+  // after rejection or after leaving a team they were once accepted to.
+  await db.collection('team_requests').createIndex(
+    { teamId: 1, userId: 1 },
+    {
+      unique: true,
+      partialFilterExpression: { status: 'pending' },
+      name: 'team_requests_pending_unique',
+    }
+  );
+  // Listing pending requests for a team — the most common query.
+  await db.collection('team_requests').createIndex({ teamId: 1, status: 1 });
+  // Listing my own request history sorted by recency.
+  await db.collection('team_requests').createIndex({ userId: 1, createdAt: -1 });
+
+  console.log('  13 indexes created across 6 collections');
 }
 
 async function run() {
@@ -106,6 +123,9 @@ async function run() {
 
   await db.collection('messages').deleteMany({});
   console.log('  messages: wiped');
+
+  await db.collection('team_requests').deleteMany({});
+  console.log('  team_requests: wiped');
 
   console.log('Creating indexes...');
   await createIndexes(db);

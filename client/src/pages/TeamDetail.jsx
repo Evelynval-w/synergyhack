@@ -1,15 +1,23 @@
 // client/src/pages/TeamDetail.jsx
 //
-// Single team view with a richer header — description (the team's
-// pitch), hackathon name + dates, capacity. Two columns:
-//   - Left: pitch + matches CTA + skills + members
-//   - Right: ChatPanel (Redis-Streams-backed team chat, members-only)
+// Single team view with:
+//   - Hero header (hackathon pill, name, description, capacity)
+//   - "Request to join" button for non-members
+//   - "Pending requests" panel for the team's creator
+//   - Combined skills + members
+//   - Right rail: ChatPanel for team members
+//
+// Refresh strategy: after a request is accepted, refetch the team
+// so the new member shows up in the members list and the chat panel
+// gains them too.
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api/client';
 import SkillChip from '../components/SkillChip';
 import ChatPanel from '../components/ChatPanel';
+import RequestJoinButton from '../components/RequestJoinButton';
+import PendingRequests from '../components/PendingRequests';
 import useAuth from '../hooks/useAuth';
 
 function formatDateRange(start, end) {
@@ -27,14 +35,18 @@ export default function TeamDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const fetchTeam = useCallback(() => {
     setLoading(true);
     setError(null);
-    api.get(`/teams/${id}`)
+    return api.get(`/teams/${id}`)
       .then(setTeam)
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    fetchTeam();
+  }, [fetchTeam]);
 
   if (loading) {
     return <div className="text-center text-slate-500 py-12">Loading team...</div>;
@@ -54,6 +66,8 @@ export default function TeamDetail() {
 
   const memberCount = team.members?.length ?? 0;
   const capacity = team.capacity || '?';
+  const isOwner = team.createdBy === userId;
+  const isMember = (team.members || []).some(m => m.id === userId);
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
@@ -65,13 +79,13 @@ export default function TeamDetail() {
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT — team info + members */}
+        {/* LEFT — team info, requests, members */}
         <div className="lg:col-span-2 space-y-6">
 
-          {/* Hero: name + hackathon + description */}
+          {/* Hero header */}
           <div className="bg-white rounded-lg border border-slate-200 p-6">
             {team.hackathon && (
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-2 py-1 rounded">
                   {team.hackathon.name}
                 </span>
@@ -90,12 +104,23 @@ export default function TeamDetail() {
 
             <div className="flex items-start justify-between gap-4 mb-3">
               <h1 className="text-2xl font-bold text-slate-900">{team.name}</h1>
-              <Link
-                to={`/teams/${id}/matches`}
-                className="bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-emerald-600 transition shrink-0"
-              >
-                Find teammates →
-              </Link>
+              <div className="flex items-center gap-2 shrink-0">
+                {isMember && (
+                  <Link
+                    to={`/teams/${id}/matches`}
+                    className="bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-emerald-600 transition"
+                  >
+                    Find teammates →
+                  </Link>
+                )}
+                {!isMember && !isOwner && (
+                  <RequestJoinButton
+                    team={team}
+                    myUserId={userId}
+                    onRequestSent={fetchTeam}
+                  />
+                )}
+              </div>
             </div>
 
             {team.description && (
@@ -104,13 +129,21 @@ export default function TeamDetail() {
               </p>
             )}
 
-            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-100 text-sm text-slate-500">
+            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-100 text-sm text-slate-500 flex-wrap">
               <span>{memberCount} of {capacity} {memberCount === 1 ? 'member' : 'members'}</span>
               {team.hackathon?.tracks && team.hackathon.tracks.length > 0 && (
                 <span>· Tracks: {team.hackathon.tracks.join(', ')}</span>
               )}
             </div>
           </div>
+
+          {/* Pending requests — owner only. Component returns null if empty. */}
+          {isOwner && (
+            <PendingRequests
+              teamId={id}
+              onRequestDecided={fetchTeam}
+            />
+          )}
 
           {/* Combined skills */}
           <div className="bg-white rounded-lg border border-slate-200 p-6">
@@ -154,7 +187,7 @@ export default function TeamDetail() {
           </div>
         </div>
 
-        {/* RIGHT — chat */}
+        {/* RIGHT — chat (members only see content; non-members see locked panel) */}
         <div className="lg:col-span-1">
           <ChatPanel
             teamId={id}
