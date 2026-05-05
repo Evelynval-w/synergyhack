@@ -1,0 +1,71 @@
+# docker-compose.yml
+#
+# Brings up MongoDB, Neo4j, and Redis for local development.
+# App services (server, client) are added in Day 11.
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: synergyhack-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: synergyhack
+      MONGO_INITDB_ROOT_PASSWORD: dev_password
+      MONGO_INITDB_DATABASE: synergyhack
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1}).ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - synergy-net
+
+  neo4j:
+    image: neo4j:5-community
+    container_name: synergyhack-neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/dev_password
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - synergy-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: synergyhack-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - synergy-net
+
+volumes:
+  mongo_data:
+  neo4j_data:
+  neo4j_logs:
+  redis_data:
+
+networks:
+  synergy-net:
+    driver: bridge
