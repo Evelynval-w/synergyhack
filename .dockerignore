@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/.env
+**/.env.local
+.git
+.gitignore
+**/.DS_Store
+**/coverage
+**/.vite
+**/npm-debug.log
+docs/
+*.md
+!server/package.json
+!client/package.json

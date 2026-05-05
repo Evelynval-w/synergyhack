@@ -2,8 +2,12 @@
 //
 // Centralized fetch wrapper. Auto-attaches the JWT from localStorage
 // to every request that needs it.
-
-const API_BASE = 'http://localhost:3000';
+//
+// API_BASE resolution:
+//   - In dev (Vite, port 5173): hits localhost:3000 directly
+//   - In production (Nginx-served): uses /api which Nginx proxies
+//     to the server container. No CORS, no separate origin.
+const API_BASE = import.meta.env.DEV ? 'http://localhost:3000' : '/api';
 
 function getToken() {
   return localStorage.getItem('synergy_token');

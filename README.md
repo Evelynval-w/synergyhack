@@ -1,146 +1,158 @@
 # SynergyHack
 
-A complementarity-based hackathon teammate matcher. Built for EPITA Paris — Database Systems final project (April–May 2026).
+A teammate-matching app for hackathon participants, built for EPITA's Database Systems course. Finds collaborators who **complement** your team's skills rather than duplicating them.
 
-> **Status:** in active development through 4 May 2026. This README describes the finished system. Anything not yet implemented is tagged `[TODO]`.
+Built on three databases that each do a job the others cannot do well:
 
----
+- **MongoDB** for profile content, team data, and analytical aggregations
+- **Neo4j** for the skill-complementarity graph and the matching algorithm
+- **Redis** for sessions, presence, and real-time chat via Streams
 
-## Demo
-
-> **[TODO]** Add screenshots once frontend is functional. Suggested: home page, team page with chat panel, match results with skill coverage chart.
->
-> **[TODO]** Optional: 3–5 minute demo video walking through a full session — register, create a team, request matches, see the gap-coverage explanation. Embed as a YouTube link or a `docs/demo.mp4` file.
-
----
-
-## The problem
-
-Most hackathon teammate-finding tools optimize for the wrong thing. They match people who already have similar skills — backend developers find other backend developers, designers find designers — and you end up with a team where everyone's strong in the same area and nobody owns the parts they're weak in.
-
-SynergyHack flips this. Instead of finding people *like* you, it finds people who *complement* you. If your team is two backend developers, the tool surfaces designers and front-end developers, not more backend folks. The result: balanced teams that actually ship.
-
-The matching is computed as a graph traversal in Neo4j over a hand-curated complementarity matrix between skills. That's the heart of the project, and the reason a graph database is the right tool here.
-
----
-
-## Why three databases?
-
-We use **MongoDB**, **Neo4j**, and **Redis** together because each one is the right tool for a different part of the problem:
-
-- **MongoDB** is the source of truth for content — user profiles, team descriptions, hackathon details, past projects. Document-shaped data with variable schema, occasional full-text search needs (find people whose bio mentions "Python"), and analytics over historical projects via aggregation pipelines.
-- **Neo4j** holds the graph projection — users, skills, teams, and the COMPLEMENTS edges between skills. It answers the matching question (a path traversal) in a single Cypher query that would be a recursive nightmare in SQL.
-- **Redis** handles everything that's ephemeral or needs sub-millisecond reads: sessions, presence, atomic team-slot counters, leaderboards, recent activity, and durable chat via Redis Streams.
-
-This is polyglot persistence: pick the database that fits the data shape and the access pattern, not the one you're most comfortable with.
-
----
-
-## Architecture
-
-> **[TODO]** Embed the architecture diagram. Export `docs/synergyhack_architecture.drawio` to PNG and reference it as `docs/architecture.png`, then uncomment the line below.
-
-<!-- ![Architecture](docs/architecture.png) -->
-
-The system is a single Express server backed by all three databases, plus a React frontend. Users hit the React app, which calls the Express API. The API reads and writes to all three stores through a thin service layer:
-
-- `mongo.js`, `neo4j.js`, `redis.js` — connection singletons (one per DB)
-- `*.service.js` files — business logic per resource (`user.service`, `team.service`, `match.service`, etc.)
-- `graph-sync.service.js` — the only place where MongoDB and Neo4j writes are coordinated; routes never touch both directly
-
-For the demo and submission, the whole stack runs locally via Docker Compose. For day-to-day development, MongoDB Atlas and Neo4j AuraDB are used so the team isn't dependent on Docker being up on every laptop.
-
----
-
-## Tech stack
-
-**Backend**
-- Node.js 20 + Express
-- MongoDB driver (`mongodb` — no Mongoose; the project rubric explicitly forbids ORMs)
-- Neo4j driver (`neo4j-driver`)
-- Redis client (`redis`)
-- bcrypt for password hashing, jsonwebtoken for auth tokens
-
-**Frontend**
-- React 18 + Vite
-- TailwindCSS
-- React Router
-- Recharts (for the skill-coverage radar chart)
-- Axios
-
-**Infrastructure**
-- Docker + Docker Compose
-- nginx (serves the built React app in the production container)
-
-**Databases**
-- MongoDB 7
-- Neo4j 5 (Community)
-- Redis 7
-
----
-
-## Prerequisites
-
-- **Docker Desktop** — https://www.docker.com/products/docker-desktop
-- **Node.js 20** (only if you want to run the seed script outside Docker; the app itself runs in containers)
-- **Git** — for cloning
-
-That's it. No need to install MongoDB, Neo4j, or Redis separately.
+For the full design rationale, see [REPORT.md](./REPORT.md). For the architecture diagrams and per-database schemas, see [docs/](./docs/).
 
 ---
 
 ## Quick start
 
+The whole stack runs in Docker:
+
 ```bash
-# 1. Clone
 git clone https://github.com/Evelynval-w/synergyhack.git
 cd synergyhack
-
-# 2. Set up environment variables
 cp .env.example .env
-# (the defaults work for Docker mode — only edit if you want cloud DBs)
 
-# 3. Bring up the stack
-docker compose up --build
+# Bring up everything: Mongo, Redis, Neo4j, server, client
+docker compose up -d --build
 
-# 4. In a second terminal, seed the databases with sample data
-npm run seed
+# Seed both databases (first run only)
+docker compose exec server node scripts/seed-mongo.js
+docker compose exec server node scripts/seed-neo4j.js
 
-# 5. Open the app
-# Frontend: http://localhost:5173
-# API:      http://localhost:3000
-# Neo4j Browser: http://localhost:7474 (login: neo4j / dev_password)
+# Open the app
+open http://localhost:8080
 ```
 
-The first `docker compose up` takes 2–3 minutes because it builds the images. Subsequent starts take about 20 seconds.
+That's it. Five containers, no local Node or npm install required on the host machine.
 
-To shut down:
+To stop everything: `docker compose down`. To reset Mongo and Redis volumes too: `docker compose down -v`.
 
-```bash
-docker compose down       # stops containers, keeps the data
-docker compose down -v    # stops AND wipes all data (use this for a clean test)
-```
+### Demo accounts
+
+Every seeded user signs in with the password **`password123`**. Try `makuo`, `aadithya`, `chris`, `noah`, `lina_dev`, or any other seeded username (50 in total). You can also create a fresh account from the landing page.
 
 ---
 
-## How to use
+## Tech stack
 
-### As a hackathon participant
+| Layer | Tools |
+|---|---|
+| Frontend | React 19, Vite, Tailwind, React Router |
+| Backend | Node.js 20, Express, JSON Web Tokens, bcryptjs |
+| Databases | MongoDB 7, Neo4j 5, Redis 7 |
+| Infra | Docker Compose, Nginx (serves client + reverse-proxies API) |
 
-1. **Register** at `/register` with a username, email, password, and short bio.
-2. **Add your skills** on `/profile` — pick from the catalogue and rate your level (1–5) and years of experience.
-3. **Browse hackathons** at `/hackathons` and pick one you want to compete in.
-4. **Create a team** for that hackathon, or join an existing one.
-5. **Find teammates** by clicking "Find matches" on your team page. The system returns up to 20 candidates ranked by how much they'd extend your team's skill coverage.
-6. **Click a match** to see exactly which of their skills complement yours — you can defend the recommendation, not just trust the score.
-7. **Chat with your team** using the panel on the team page. Messages are persisted in Redis Streams so anyone joining mid-event sees the full history.
+No ORM. Each database is accessed via its native driver from a dedicated service module under `server/src/services/`. All cross-database writes go through `graph-sync.service.js`, which is the only module allowed to write to two stores in one call.
 
-### As a developer poking around
+---
 
-- **API root:** `http://localhost:3000` returns the version
-- **Health check:** `GET /health` returns the status of all three databases
-- **API docs:** Postman collection committed at `docs/postman-collection.json`
-- **Neo4j Browser:** `http://localhost:7474` lets you run Cypher queries against the graph
+## Architecture
+
+```
+        ┌────────────────────────────┐
+        │    Browser (port 8080)     │
+        └─────────────┬──────────────┘
+                      │
+        ┌─────────────▼──────────────┐
+        │  Nginx (client container)  │
+        │  - serves built React SPA  │
+        │  - reverse-proxies /api/*  │
+        └─────────────┬──────────────┘
+                      │ /api/*
+        ┌─────────────▼──────────────┐
+        │   Express (server:3000)    │
+        └──┬───────────┬───────────┬─┘
+           │           │           │
+       ┌───▼──┐    ┌──▼──┐     ┌──▼───┐
+       │Mongo │    │Neo4j│     │Redis │
+       │27017 │    │7687 │     │ 6379 │
+       └──────┘    └─────┘     └──────┘
+```
+
+The browser only ever talks to one origin (`http://localhost:8080`). Nginx routes `/api/*` to the Express server and serves everything else as static SPA assets. No CORS headaches, no separate API URL to configure.
+
+For sequence diagrams of the four key flows (login, match, chat, inbox) and the per-database role breakdown, see [docs/architecture.md](./docs/architecture.md).
+
+---
+
+## Features
+
+**Auth.** Real bcrypt-backed register and login. Sessions stored in Redis with 24-hour TTL.
+
+**People discovery.** Browse all users alphabetically or full-text search across skill names, role, and bio (compound text index in Mongo with weighted fields). Click into anyone's profile to see their skills with level/years and their past hackathon projects.
+
+**Profile editor.** Edit your bio, role, GitHub URL, email, and skills. Skill changes diff-and-apply against Neo4j: removed skills drop their `HAS_SKILL` edges, new ones get added, level/years on unchanged skills get updated. Mongo is the source of truth; Neo4j stays in sync via the single `graph-sync` boundary.
+
+**Teams.** Browse teams or search by name and project pitch. Each team has a hackathon, a description, capacity, and a member roster.
+
+**Matching.** A team's owner clicks "Find teammates" and sees a ranked list of candidates whose skills complement what the team is missing. The ranking is a Cypher path traversal: from the team's existing skills, follow `COMPLEMENTS` edges (with weights) to candidate skills, sum, and rank.
+
+**Join requests.** A non-member can request to join a team with an optional message. The team's owner sees the request inline on the team page with the requester's profile preview, and can accept (which adds them to Mongo + creates the Neo4j edge) or reject (which keeps an audit record). The partial unique index prevents duplicate pending requests but allows re-requesting after rejection.
+
+**Chat.** Each team has a live chat backed by Redis Streams (capped at 500 messages with `MAXLEN ~`). 1:1 DMs use a sorted-key channel pattern (`chat:dm:{sortedA}:{sortedB}`) so both participants read and write to the same stream. Every message is mirrored to a Mongo `messages` collection for durable archival and cross-channel queries (the inbox).
+
+**Analytics.** Two MongoDB aggregation pipelines on `past_projects`:
+- `GET /analytics/skill-demand` returns the top 5 skills demanded for each role across past hackathon projects
+- `GET /analytics/team-patterns` returns the role combinations that appear most often on highly-rated past projects
+
+---
+
+## API endpoints
+
+Auth:
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/api/auth/register` | New account: username, email, password, role |
+| POST | `/api/auth/login` | bcrypt-verified login |
+| POST | `/api/auth/logout` | Invalidate session |
+
+Users:
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/users` | Paginated browse |
+| GET | `/api/users/search?q=` | Full-text search |
+| GET | `/api/users/me` | Own profile (includes email) |
+| PATCH | `/api/users/me` | Update bio, role, email, github_url, skills |
+| GET | `/api/users/:id` | Public profile |
+
+Teams:
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/teams` | Browse, optional `?q=` text search |
+| GET | `/api/teams/:id` | Detail with hackathon, members, combined skills |
+| GET | `/api/teams/:id/matches` | Gap-coverage match (Cypher path traversal) |
+| GET | `/api/teams/:id/messages` | Read team chat (Redis Streams) |
+| POST | `/api/teams/:id/messages` | Post to team chat (members only) |
+| POST | `/api/teams/:id/requests` | Request to join |
+| GET | `/api/teams/:id/requests` | List pending (owner only) |
+| POST | `/api/teams/:id/requests/:rid/accept` | Accept (owner only) |
+| POST | `/api/teams/:id/requests/:rid/reject` | Reject (owner only) |
+
+DMs and miscellaneous:
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/dms` | DM inbox (Mongo aggregate over chat mirror) |
+| GET | `/api/dms/:peerId/messages` | Read 1:1 conversation |
+| POST | `/api/dms/:peerId/messages` | Send DM |
+| GET | `/api/me/requests` | Own request history (any status) |
+| GET | `/api/skills` | Skill catalogue for typeahead |
+| GET | `/api/analytics/skill-demand` | MongoDB aggregation pipeline 1 |
+| GET | `/api/analytics/team-patterns` | MongoDB aggregation pipeline 2 |
+
+All routes except `/auth/login` and `/auth/register` require a `Bearer` token in the `Authorization` header.
 
 ---
 
@@ -148,158 +160,97 @@ docker compose down -v    # stops AND wipes all data (use this for a clean test)
 
 ```
 synergyhack/
-├── client/                  # React frontend (Vite + Tailwind)
+├── client/                  # React SPA
 │   ├── src/
-│   │   ├── api/             # Axios client with auth interceptor
-│   │   ├── components/      # Layout, ChatPanel, MatchCard, SkillCoverageChart, SearchBox
-│   │   ├── hooks/           # useAuth, usePolling, useChat, useOnline
-│   │   └── pages/           # Login, Register, Profile, Hackathons, TeamDetail, Matches
-│   ├── Dockerfile
-│   └── nginx.conf
-│
-├── server/                  # Express backend
-│   ├── src/
-│   │   ├── db/              # Connection singletons: mongo.js, neo4j.js, redis.js
-│   │   │                    # + neo4j.schema.cypher (constraints + indexes)
-│   │   ├── data/            # skills.json, complements.json (the matching matrix)
-│   │   ├── middleware/      # auth.js (JWT + Redis session check), rateLimit.js
-│   │   ├── routes/          # auth, users, teams, hackathons, matches, messages, analytics, stats
-│   │   ├── services/        # business logic per resource + the cross-DB sync layer
-│   │   └── index.js         # Express entry point
+│   │   ├── api/client.js    # Centralized fetch + auth header injection
+│   │   ├── components/      # Reusable UI (ChatPanel, SkillEditor, etc.)
+│   │   ├── pages/           # Routed pages (Teams, People, Profile, ...)
+│   │   ├── hooks/           # useAuth (read-only event subscriber)
+│   │   └── App.jsx
+│   ├── nginx.conf           # /api reverse proxy + SPA fallback
 │   └── Dockerfile
-│
+├── server/                  # Express API
+│   ├── src/
+│   │   ├── routes/          # Express routers, one per resource
+│   │   ├── services/        # All DB access lives here
+│   │   ├── middleware/      # auth (JWT), rateLimit (Redis-backed)
+│   │   ├── db/              # mongo.js, neo4j.js, redis.js connectors
+│   │   └── data/            # Skill catalogue + complement-pair seeds
+│   └── Dockerfile
 ├── scripts/
-│   ├── fixtures/            # Hand-crafted JSON: 50 users, 5 hackathons, 10 teams, 30 past projects
-│   ├── seed-mongo.js        # Bulk inserts Mongo data
-│   ├── seed-neo4j.js        # Schema + skills + complements + users + teams + memberships
-│   ├── seed-redis.js        # Warms sessions, presence, slot counters, chat seed messages
-│   └── seed.js              # Unified runner — calls all three in order
-│
+│   ├── seed-mongo.js        # 5 collections + 13 indexes
+│   ├── seed-neo4j.js        # All graph nodes + relationships
+│   └── fixtures/            # JSON seed data (50 users, 10 teams, ...)
 ├── docs/
-│   ├── architecture.png     # System diagram [TODO: export from drawio]
-│   ├── mongo-schema.md
-│   ├── neo4j-schema.md
-│   ├── redis-schema.md
-│   └── postman-collection.json
-│
-├── tests/
-│   └── match.test.js        # Unit test for the gap-coverage match algorithm
-│
-├── docker-compose.yml
-├── .env.example
-├── REPORT.md                # Project report (rubric deliverable)
-├── REPORT.pdf               # Same, exported
-├── README.md                # ← you are here
-└── LICENSE
+│   ├── architecture.md      # System diagrams + sequence flows
+│   ├── neo4j-schema.md      # Graph model
+│   └── redis-schema.md      # Key patterns and TTLs
+├── docker-compose.yml       # Five-service stack
+├── REPORT.md                # Project report
+└── README.md                # This file
 ```
 
 ---
 
-## The databases in more detail
+## Local development without Docker
 
-### MongoDB — content & analytics
+If you want hot reload while developing, you can run the client and server outside Docker while keeping the databases in containers:
 
-Five collections: `users`, `teams`, `hackathons`, `past_projects`, plus indexes for unique constraints and full-text search.
+```bash
+# 1. Start only the databases
+docker compose up -d mongo redis neo4j
 
-Two aggregation pipelines power the analytics endpoints:
+# 2. Install and start the server
+cd server
+npm install
+npm start  # runs on http://localhost:3000
 
-- `GET /analytics/skill-demand` — across all past projects, which skills are most in demand for each role? (`$unwind` members, `$unwind` skills, `$group` by role-skill, `$sort`)
-- `GET /analytics/team-patterns` — in highly-rated past projects (rating > 4), which combinations of roles appear most often? (`$match`, `$unwind`, `$group` per project, `$sortArray`, `$group` again on combinations, `$limit`)
+# 3. In another terminal, start the client (Vite dev mode with HMR)
+cd client
+npm install
+npm run dev  # runs on http://localhost:5173
+```
 
-A text index on `bio` and `username` powers `/users/search?q=...`, used by the header search box on the frontend.
-
-Full schema and rationale: [`docs/mongo-schema.md`](docs/mongo-schema.md).
-
-### Neo4j — the matching graph
-
-Six node types (User, Skill, Role, Team, Hackathon, Project) and seven relationship types. The interesting one is `(:Skill)-[:COMPLEMENTS {strength: 0.0–1.0}]->(:Skill)` — a hand-curated matrix that encodes which skills pair well on a hackathon team.
-
-The match algorithm is one Cypher query that:
-
-1. Collects all skills currently held by team members
-2. Finds candidate users not already on the team
-3. For each candidate skill, follows COMPLEMENTS edges back to team skills
-4. Sums the edge strengths per candidate
-5. Returns top 20 by total
-
-The query lives in `server/src/services/match.service.js`. It's exposed at `GET /teams/:id/matches`.
-
-Full schema and the walked-through query: [`docs/neo4j-schema.md`](docs/neo4j-schema.md).
-
-### Redis — sessions, presence, real-time
-
-All six base Redis data types are in active use:
-
-| Type | Key pattern | Role |
-|---|---|---|
-| STRING | `session:{token}` | Logged-in user state, 24h TTL |
-| SET | `online:users` | Currently online user IDs |
-| HASH | `team:{id}:slots` | Atomic team-slot counters |
-| ZSET | `leaderboard:matchers` | Ranked top-N most active matchers |
-| LIST | `recent:joins` | Bounded activity feed (last 20 joins) |
-| STREAM | `chat:team:{id}` | Durable chat with cursor-based reads |
-
-The chat is the standout piece — Redis Streams give us auto-generated message IDs, efficient `XRANGE` queries to fetch only new messages since a client's last-seen ID, and durability without any extra storage layer. Full reasoning in [`docs/redis-schema.md`](docs/redis-schema.md).
+In Vite dev mode the API base URL auto-resolves to `http://localhost:3000` (no Nginx proxy). Both modes can coexist; switch between them as needed.
 
 ---
 
-## Running without Docker
+## Environment variables
 
-If you want to develop against cloud-hosted databases instead of containers:
+See `.env.example` for the full list. The defaults work out of the box for the Docker setup. Notable:
 
-1. Sign up for **MongoDB Atlas** (free M0 tier) and **Neo4j AuraDB Free**.
-2. For Redis, you can run it locally with `brew install redis && redis-server`, or sign up for Upstash (free tier).
-3. Update `.env` with the cloud connection strings (templates are commented in `.env.example`).
-4. Run the server directly: `cd server && npm install && npm run dev`
-5. Run the frontend directly: `cd client && npm install && npm run dev`
-
-This is what the team uses for day-to-day development. Docker mode is for the demo and submission.
+- `MONGO_URI`: connection string for the seed scripts
+- `NEO4J_URI` / `NEO4J_USER` / `NEO4J_PASSWORD`: local container by default; can be repointed at Aura cloud for development
+- `REDIS_URL`: `redis://redis:6379` inside Docker, `redis://localhost:6379` for local dev
+- `JWT_SECRET`: change this in any non-development setup
 
 ---
 
-## Troubleshooting
+## Known limitations
 
-**`docker compose up` hangs at "waiting for healthchecks"**
-Neo4j takes 30–60 seconds to fully boot on first run. Wait it out. If it's still stuck after 2 minutes, run `docker compose logs neo4j` and check for errors.
+The submission is intentionally scoped. Things explicitly not built:
 
-**`npm run seed` fails with connection errors**
-The databases need to be healthy before seeding. Make sure `docker compose ps` shows all services as `healthy`, not `starting`.
+- **Real-time push.** Chat polls every 2 seconds rather than using WebSockets. Streams support consumer groups for true push, but polling is simpler and fully functional for a demo.
+- **Email notifications.** Join request decisions are visible only when the requester checks the app.
+- **Fuzzy search.** Mongo's text index does stemming and tokenization but not fuzzy matching ("chrss" won't find "chris"). Atlas Search would solve this.
+- **Mobile responsiveness audit.** The UI is built mobile-first but has not been polished for small screens specifically.
 
-**Port already in use (3000, 5173, 27017, 7474, 7687, or 6379)**
-Something else is using one of the ports. Either stop it, or change the port mapping in `docker-compose.yml`.
-
-**Match results look weird / empty**
-The graph needs to be seeded. Run `npm run seed` and check Neo4j Browser at `http://localhost:7474` — you should see User and Skill nodes with edges between them.
-
-**`git push` blocked by branch protection**
-That's working as intended. Push to a feature branch and open a Pull Request.
+These are roadmap items, not bugs.
 
 ---
 
-## The team
+## Contributors
 
-> **[TODO]** Add real names, GitHub profile links, short bios. Suggested: 1–2 sentences each + role on the project.
+Built by:
 
-- **Makuochukwu Okoene** ([@Evelynval-w](https://github.com/Evelynval-w)) — Neo4j, match algorithm, frontend match UI
-- **Aadithya** ([@TODO](#)) — MongoDB, authentication, aggregations, frontend auth pages
-- **Chris** ([@chrissoo1213](https://github.com/chrissoo1213)) — Redis, Docker, real-time features, frontend scaffold
+- **Okoene Makuochukwu** ([@Evelynval-w](https://github.com/Evelynval-w)): architecture, matching algorithm, chat system, search, frontend, join-request workflow, documentation
+- **Aadithya Reddy Manda** ([@adithyareddym105-gif](https://github.com/adithyareddym105-gif)): Express scaffold, MongoDB connector and indexes, register/bcrypt auth (co-author)
+- **Chris Hazzouri** ([@chrissoo1213](https://github.com/chrissoo1213)): chat UI exploration, landing page, profile editor, team search, README and Docker (co-author)
 
-Course: **EPITA Paris — Database Systems** (Spring 2026). Project deadline: **4 May 2026**.
+Co-author trailers on commits surface contributions on the GitHub contributors graph. See [REPORT.md](./REPORT.md) section 7 for the full breakdown.
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
-
----
-
-## Acknowledgments
-
-> **[TODO]** Add anything you want to credit here. Suggestions:
-> - Your professor (with permission — usually fine to name them)
-> - Any tutorials, articles, or papers that influenced the design
-> - Tools you relied on (Neo4j AuraDB, MongoDB Atlas, etc.)
-> - Anyone outside the team who helped (TAs, classmates who reviewed PRs, etc.)
-
-Built as a final project for the EPITA Paris Database Systems course. The complementarity-based matching idea was inspired by the observation that real hackathon teams need *complementary* skills, not redundant ones — a problem we ran into ourselves at past events.
+This project is submitted as coursework for EPITA's Database Systems class. Code can be referenced freely; please do not submit it as your own coursework.
