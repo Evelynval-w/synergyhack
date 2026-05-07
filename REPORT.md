@@ -4,7 +4,7 @@
 
 **Repository:** https://github.com/Evelynval-w/synergyhack
 **Submitted by:** Chris Hazzouri
-**Contributors:** Aadithya Reddy Manda, Okoene Makuochukwu (see Contributions section)
+**Contributors:** Aadithya Reddy Manda, Okoene Makuochukwu
 
 ---
 
