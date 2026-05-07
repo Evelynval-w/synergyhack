@@ -1,0 +1,140 @@
+[
+  {
+    "_id": "670000000000000000000001",
+    "name": "Dark Scan",
+    "hackathonId": "660000000000000000000001",
+    "capacity": 4,
+    "description": "Building an AI agent that analyzes dark web data for threat intel.",
+    "createdBy": "650000000000000000000001",
+    "members": [
+      "650000000000000000000001",
+      "650000000000000000000004",
+      "650000000000000000000007"
+    ],
+    "createdAt": "2026-04-15T10:00:00Z"
+  },
+  {
+    "_id": "670000000000000000000002",
+    "name": "ClimateStack",
+    "hackathonId": "660000000000000000000001",
+    "capacity": 5,
+    "description": "Carbon footprint dashboard for SMEs with one-click reporting.",
+    "createdBy": "650000000000000000000005",
+    "members": [
+      "650000000000000000000005",
+      "650000000000000000000008",
+      "650000000000000000000012",
+      "650000000000000000000019"
+    ],
+    "createdAt": "2026-04-16T14:30:00Z"
+  },
+  {
+    "_id": "670000000000000000000003",
+    "name": "AgentForge",
+    "hackathonId": "660000000000000000000002",
+    "capacity": 3,
+    "description": "Multi-agent system for automating dev workflows on AMD hardware.",
+    "createdBy": "650000000000000000000003",
+    "members": [
+      "650000000000000000000003",
+      "650000000000000000000010",
+      "650000000000000000000022"
+    ],
+    "createdAt": "2026-04-18T09:15:00Z"
+  },
+  {
+    "_id": "670000000000000000000004",
+    "name": "DevFlow",
+    "hackathonId": "660000000000000000000002",
+    "capacity": 4,
+    "description": "AI-powered code review assistant integrated with GitHub.",
+    "createdBy": "650000000000000000000015",
+    "members": [
+      "650000000000000000000015",
+      "650000000000000000000028"
+    ],
+    "createdAt": "2026-04-19T11:00:00Z"
+  },
+  {
+    "_id": "670000000000000000000005",
+    "name": "ChainSync",
+    "hackathonId": "660000000000000000000003",
+    "capacity": 5,
+    "description": "Cross-chain DeFi aggregator with one-click bridging.",
+    "createdBy": "650000000000000000000031",
+    "members": [
+      "650000000000000000000031",
+      "650000000000000000000033",
+      "650000000000000000000040",
+      "650000000000000000000045"
+    ],
+    "createdAt": "2026-04-20T16:45:00Z"
+  },
+  {
+    "_id": "670000000000000000000006",
+    "name": "SocialVault",
+    "hackathonId": "660000000000000000000003",
+    "capacity": 4,
+    "description": "Decentralized social vault — own your followers, not the platform.",
+    "createdBy": "650000000000000000000038",
+    "members": [
+      "650000000000000000000038",
+      "650000000000000000000041"
+    ],
+    "createdAt": "2026-04-21T08:20:00Z"
+  },
+  {
+    "_id": "670000000000000000000007",
+    "name": "EduPath",
+    "hackathonId": "660000000000000000000004",
+    "capacity": 4,
+    "description": "Personalized learning path generator for high school students.",
+    "createdBy": "650000000000000000000018",
+    "members": [
+      "650000000000000000000018",
+      "650000000000000000000023",
+      "650000000000000000000027",
+      "650000000000000000000035"
+    ],
+    "createdAt": "2026-03-05T13:10:00Z"
+  },
+  {
+    "_id": "670000000000000000000008",
+    "name": "MediConnect",
+    "hackathonId": "660000000000000000000004",
+    "capacity": 4,
+    "description": "Tele-consultation platform for under-served rural clinics.",
+    "createdBy": "650000000000000000000020",
+    "members": [
+      "650000000000000000000020",
+      "650000000000000000000026"
+    ],
+    "createdAt": "2026-03-07T10:00:00Z"
+  },
+  {
+    "_id": "670000000000000000000009",
+    "name": "GreenSpark",
+    "hackathonId": "660000000000000000000005",
+    "capacity": 4,
+    "description": "Match consumers with local sustainable businesses based on values.",
+    "createdBy": "650000000000000000000044",
+    "members": [
+      "650000000000000000000044",
+      "650000000000000000000048"
+    ],
+    "createdAt": "2026-04-22T17:30:00Z"
+  },
+  {
+    "_id": "670000000000000000000010",
+    "name": "PitchDeck.AI",
+    "hackathonId": "660000000000000000000005",
+    "capacity": 3,
+    "description": "Generate investor-ready pitch decks from a one-paragraph startup idea.",
+    "createdBy": "650000000000000000000050",
+    "members": [
+      "650000000000000000000050",
+      "650000000000000000000049"
+    ],
+    "createdAt": "2026-04-23T19:00:00Z"
+  }
+]

@@ -1,0 +1,49 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+client/dist/
+
+# Docker
+volumes/
+/data/
+
+# Editors
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Logs
+logs/
+*.log
+
+# Coverage
+coverage/
+.nyc_output/
+
+# OS
+Thumbs.db
+
+# Local environment backups
+.env.bak
+
+# Vite cache
+client/.vite/
+
+# Accidental root npm artifacts
+/package.json
+/package-lock.json
+/node_modules/
+docs/finish-plan.md

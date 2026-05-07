@@ -1,0 +1,555 @@
+
+[
+  {
+    "_id": "650000000000000000000001",
+    "username": "makuo",
+    "email": "makuo@example.com",
+    "bio": "2nd-year CS student at EPITA. Into cybersecurity and AI-powered apps.",
+    "role": "Backend",
+    "skills": [
+      { "name": "Python", "level": 4, "years": 2 },
+      { "name": "Node.js", "level": 3, "years": 1 },
+      { "name": "MongoDB", "level": 3, "years": 1 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000002",
+    "username": "aadithya",
+    "email": "aadithya@example.com",
+    "bio": "Backend developer who likes databases and systems design.",
+    "role": "Backend",
+    "skills": [
+      { "name": "Node.js", "level": 4, "years": 3 },
+      { "name": "PostgreSQL", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000003",
+    "username": "chris",
+    "email": "chris@example.com",
+    "bio": "DevOps-leaning fullstack. Loves clean infrastructure.",
+    "role": "Backend",
+    "skills": [
+      { "name": "Docker", "level": 5, "years": 3 },
+      { "name": "AWS", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000004",
+    "username": "lina_dev",
+    "email": "lina@example.com",
+    "bio": "Frontend engineer passionate about UI animations.",
+    "role": "Frontend",
+    "skills": [
+      { "name": "React", "level": 5, "years": 3 },
+      { "name": "TypeScript", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000005",
+    "username": "samuelk",
+    "email": "samuel@example.com",
+    "bio": "Cloud and infrastructure enthusiast.",
+    "role": "DevOps",
+    "skills": [
+      { "name": "Kubernetes", "level": 4, "years": 2 },
+      { "name": "Linux", "level": 4, "years": 4 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000006",
+    "username": "nina_ai",
+    "email": "nina@example.com",
+    "bio": "AI researcher focused on NLP and LLMs.",
+    "role": "AI/ML",
+    "skills": [
+      { "name": "Python", "level": 5, "years": 4 },
+      { "name": "PyTorch", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000007",
+    "username": "jaycodes",
+    "email": "jay@example.com",
+    "bio": "Fullstack developer building scalable web apps.",
+    "role": "Fullstack",
+    "skills": [
+      { "name": "React", "level": 4, "years": 2 },
+      { "name": "Express", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000008",
+    "username": "zoe_ui",
+    "email": "zoe@example.com",
+    "bio": "Creative UI/UX designer and frontend builder.",
+    "role": "Frontend",
+    "skills": [
+      { "name": "Figma", "level": 5, "years": 4 },
+      { "name": "Vue.js", "level": 3, "years": 1 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000009",
+    "username": "davidsql",
+    "email": "david@example.com",
+    "bio": "Database engineer optimizing large systems.",
+    "role": "Data Engineer",
+    "skills": [
+      { "name": "SQL", "level": 5, "years": 5 },
+      { "name": "MySQL", "level": 4, "years": 3 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000010",
+    "username": "amyweb",
+    "email": "amy@example.com",
+    "bio": "Frontend developer who loves accessibility.",
+    "role": "Frontend",
+    "skills": [
+      { "name": "HTML", "level": 5, "years": 4 },
+      { "name": "CSS", "level": 5, "years": 4 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000011",
+    "username": "mohit",
+    "email": "mohit@example.com",
+    "bio": "Java backend engineer and API architect.",
+    "role": "Backend",
+    "skills": [
+      { "name": "Java", "level": 5, "years": 4 },
+      { "name": "Spring Boot", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000012",
+    "username": "ellie",
+    "email": "ellie@example.com",
+    "bio": "Mobile developer building Android apps.",
+    "role": "Mobile",
+    "skills": [
+      { "name": "Kotlin", "level": 4, "years": 2 },
+      { "name": "Firebase", "level": 3, "years": 1 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000013",
+    "username": "ryan",
+    "email": "ryan@example.com",
+    "bio": "Fullstack engineer exploring SaaS products.",
+    "role": "Fullstack",
+    "skills": [
+      { "name": "Next.js", "level": 4, "years": 2 },
+      { "name": "MongoDB", "level": 3, "years": 1 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000014",
+    "username": "fatima",
+    "email": "fatima@example.com",
+    "bio": "Data analyst passionate about dashboards.",
+    "role": "Data Engineer",
+    "skills": [
+      { "name": "Power BI", "level": 4, "years": 2 },
+      { "name": "Python", "level": 4, "years": 3 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000015",
+    "username": "kevin",
+    "email": "kevin@example.com",
+    "bio": "Cybersecurity student and CTF player.",
+    "role": "Backend",
+    "skills": [
+      { "name": "Linux", "level": 4, "years": 3 },
+      { "name": "Python", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000016",
+    "username": "sophia",
+    "email": "sophia@example.com",
+    "bio": "React Native mobile app developer.",
+    "role": "Mobile",
+    "skills": [
+      { "name": "React Native", "level": 4, "years": 2 },
+      { "name": "Expo", "level": 3, "years": 1 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000017",
+    "username": "tomdev",
+    "email": "tom@example.com",
+    "bio": "Backend engineer focused on scalable APIs.",
+    "role": "Backend",
+    "skills": [
+      { "name": "Go", "level": 4, "years": 2 },
+      { "name": "Redis", "level": 3, "years": 1 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000018",
+    "username": "isabella",
+    "email": "isabella@example.com",
+    "bio": "Designer turning ideas into interfaces.",
+    "role": "UI/UX",
+    "skills": [
+      { "name": "Figma", "level": 5, "years": 5 },
+      { "name": "Adobe XD", "level": 4, "years": 3 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000019",
+    "username": "noah",
+    "email": "noah@example.com",
+    "bio": "Machine learning enthusiast building prediction models.",
+    "role": "AI/ML",
+    "skills": [
+      { "name": "Scikit-learn", "level": 4, "years": 2 },
+      { "name": "Python", "level": 5, "years": 4 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000020",
+    "username": "olivia",
+    "email": "olivia@example.com",
+    "bio": "Frontend developer obsessed with performance.",
+    "role": "Frontend",
+    "skills": [
+      { "name": "Angular", "level": 4, "years": 2 },
+      { "name": "JavaScript", "level": 5, "years": 4 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000021",
+    "username": "ethan",
+    "email": "ethan@example.com",
+    "bio": "Cloud engineer automating deployments.",
+    "role": "DevOps",
+    "skills": [
+      { "name": "Terraform", "level": 4, "years": 2 },
+      { "name": "AWS", "level": 4, "years": 3 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000022",
+    "username": "mia",
+    "email": "mia@example.com",
+    "bio": "Python developer working on automation tools.",
+    "role": "Backend",
+    "skills": [
+      { "name": "Python", "level": 5, "years": 4 },
+      { "name": "Flask", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000023",
+    "username": "lucas",
+    "email": "lucas@example.com",
+    "bio": "Junior fullstack engineer learning microservices.",
+    "role": "Fullstack",
+    "skills": [
+      { "name": "Node.js", "level": 3, "years": 1 },
+      { "name": "React", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000024",
+    "username": "ava",
+    "email": "ava@example.com",
+    "bio": "Creative frontend builder with design sense.",
+    "role": "Frontend",
+    "skills": [
+      { "name": "SASS", "level": 4, "years": 2 },
+      { "name": "React", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000025",
+    "username": "daniel",
+    "email": "daniel@example.com",
+    "bio": "DevOps engineer focused on observability.",
+    "role": "DevOps",
+    "skills": [
+      { "name": "Grafana", "level": 4, "years": 2 },
+      { "name": "Prometheus", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000026",
+    "username": "grace",
+    "email": "grace@example.com",
+    "bio": "Mobile engineer building cross-platform apps.",
+    "role": "Mobile",
+    "skills": [
+      { "name": "Flutter", "level": 4, "years": 2 },
+      { "name": "Dart", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000027",
+    "username": "alex",
+    "email": "alex@example.com",
+    "bio": "Backend API developer and database lover.",
+    "role": "Backend",
+    "skills": [
+      { "name": "Express", "level": 4, "years": 2 },
+      { "name": "MongoDB", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000028",
+    "username": "victoria",
+    "email": "victoria@example.com",
+    "bio": "AI engineer experimenting with computer vision.",
+    "role": "AI/ML",
+    "skills": [
+      { "name": "OpenCV", "level": 4, "years": 2 },
+      { "name": "TensorFlow", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000029",
+    "username": "ben",
+    "email": "ben@example.com",
+    "bio": "Frontend engineer crafting responsive websites.",
+    "role": "Frontend",
+    "skills": [
+      { "name": "Bootstrap", "level": 4, "years": 3 },
+      { "name": "JavaScript", "level": 4, "years": 3 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000030",
+    "username": "hannah",
+    "email": "hannah@example.com",
+    "bio": "Data engineer processing large datasets.",
+    "role": "Data Engineer",
+    "skills": [
+      { "name": "Apache Spark", "level": 4, "years": 2 },
+      { "name": "Python", "level": 4, "years": 3 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000031",
+    "username": "leo",
+    "email": "leo@example.com",
+    "bio": "Go developer interested in distributed systems.",
+    "role": "Backend",
+    "skills": [
+      { "name": "Go", "level": 5, "years": 4 },
+      { "name": "Docker", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000032",
+    "username": "scarlett",
+    "email": "scarlett@example.com",
+    "bio": "Frontend engineer building polished interfaces.",
+    "role": "Frontend",
+    "skills": [
+      { "name": "Tailwind CSS", "level": 5, "years": 3 },
+      { "name": "React", "level": 5, "years": 3 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000033",
+    "username": "gabriel",
+    "email": "gabriel@example.com",
+    "bio": "Backend developer building secure APIs.",
+    "role": "Backend",
+    "skills": [
+      { "name": "JWT", "level": 4, "years": 2 },
+      { "name": "Node.js", "level": 4, "years": 3 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000034",
+    "username": "ella",
+    "email": "ella@example.com",
+    "bio": "UI/UX designer passionate about user journeys.",
+    "role": "UI/UX",
+    "skills": [
+      { "name": "Wireframing", "level": 5, "years": 4 },
+      { "name": "Figma", "level": 5, "years": 4 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000035",
+    "username": "jack",
+    "email": "jack@example.com",
+    "bio": "Fullstack engineer working on fintech apps.",
+    "role": "Fullstack",
+    "skills": [
+      { "name": "Next.js", "level": 4, "years": 2 },
+      { "name": "PostgreSQL", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000036",
+    "username": "charlotte",
+    "email": "charlotte@example.com",
+    "bio": "Mobile developer creating sleek iOS apps.",
+    "role": "Mobile",
+    "skills": [
+      { "name": "Swift", "level": 4, "years": 2 },
+      { "name": "Firebase", "level": 3, "years": 1 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000037",
+    "username": "owen",
+    "email": "owen@example.com",
+    "bio": "Cloud-native developer and Docker expert.",
+    "role": "DevOps",
+    "skills": [
+      { "name": "Docker", "level": 5, "years": 5 },
+      { "name": "Kubernetes", "level": 4, "years": 3 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000038",
+    "username": "amelia",
+    "email": "amelia@example.com",
+    "bio": "AI enthusiast building recommendation systems.",
+    "role": "AI/ML",
+    "skills": [
+      { "name": "Python", "level": 5, "years": 4 },
+      { "name": "Pandas", "level": 5, "years": 3 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000039",
+    "username": "mason",
+    "email": "mason@example.com",
+    "bio": "Frontend engineer focused on animations.",
+    "role": "Frontend",
+    "skills": [
+      { "name": "GSAP", "level": 4, "years": 2 },
+      { "name": "React", "level": 4, "years": 3 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000040",
+    "username": "harper",
+    "email": "harper@example.com",
+    "bio": "Backend engineer exploring serverless tech.",
+    "role": "Backend",
+    "skills": [
+      { "name": "AWS Lambda", "level": 4, "years": 2 },
+      { "name": "DynamoDB", "level": 3, "years": 1 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000041",
+    "username": "logan",
+    "email": "logan@example.com",
+    "bio": "Junior data engineer interested in ETL pipelines.",
+    "role": "Data Engineer",
+    "skills": [
+      { "name": "Airflow", "level": 3, "years": 1 },
+      { "name": "SQL", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000042",
+    "username": "evelyn",
+    "email": "evelyn@example.com",
+    "bio": "Frontend and UI enthusiast creating modern designs.",
+    "role": "Frontend",
+    "skills": [
+      { "name": "React", "level": 5, "years": 3 },
+      { "name": "Tailwind CSS", "level": 5, "years": 3 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000043",
+    "username": "sebastian",
+    "email": "sebastian@example.com",
+    "bio": "Backend engineer passionate about APIs.",
+    "role": "Backend",
+    "skills": [
+      { "name": "NestJS", "level": 4, "years": 2 },
+      { "name": "PostgreSQL", "level": 4, "years": 3 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000044",
+    "username": "lily",
+    "email": "lily@example.com",
+    "bio": "Creative designer with frontend skills.",
+    "role": "UI/UX",
+    "skills": [
+      { "name": "Figma", "level": 5, "years": 4 },
+      { "name": "HTML", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000045",
+    "username": "aiden",
+    "email": "aiden@example.com",
+    "bio": "Fullstack engineer building startup MVPs.",
+    "role": "Fullstack",
+    "skills": [
+      { "name": "MERN", "level": 4, "years": 3 },
+      { "name": "TypeScript", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000046",
+    "username": "aria",
+    "email": "aria@example.com",
+    "bio": "AI engineer experimenting with transformers.",
+    "role": "AI/ML",
+    "skills": [
+      { "name": "Hugging Face", "level": 4, "years": 2 },
+      { "name": "PyTorch", "level": 5, "years": 3 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000047",
+    "username": "wyatt",
+    "email": "wyatt@example.com",
+    "bio": "DevOps engineer automating cloud systems.",
+    "role": "DevOps",
+    "skills": [
+      { "name": "Ansible", "level": 4, "years": 2 },
+      { "name": "Linux", "level": 5, "years": 4 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000048",
+    "username": "stella",
+    "email": "stella@example.com",
+    "bio": "Frontend developer who loves component systems.",
+    "role": "Frontend",
+    "skills": [
+      { "name": "Vue.js", "level": 4, "years": 2 },
+      { "name": "CSS", "level": 5, "years": 4 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000049",
+    "username": "isaac",
+    "email": "isaac@example.com",
+    "bio": "Backend engineer and systems programming fan.",
+    "role": "Backend",
+    "skills": [
+      { "name": "Rust", "level": 4, "years": 2 },
+      { "name": "Docker", "level": 4, "years": 2 }
+    ]
+  },
+  {
+    "_id": "650000000000000000000050",
+    "username": "nova",
+    "email": "nova@example.com",
+    "bio": "Fullstack developer building collaborative platforms.",
+    "role": "Fullstack",
+    "skills": [
+      { "name": "React", "level": 5, "years": 4 },
+      { "name": "Node.js", "level": 5, "years": 4 }
+    ]
+  }
+]
+

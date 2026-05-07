@@ -1,0 +1,131 @@
+# docker-compose.yml
+#
+# Five-container stack: Mongo + Neo4j + Redis (persistence layer)
+# plus server (Express API) plus client (Nginx-served React SPA).
+#
+# After `docker compose up -d --build`:
+#   http://localhost:8080  -> client (Nginx serves SPA + proxies /api)
+#   http://localhost:7474  -> Neo4j browser (optional)
+#   localhost:27017        -> Mongo (for mongosh)
+#   localhost:6379         -> Redis (for redis-cli)
+#
+# The client and server containers communicate over the synergy-net
+# Docker network using service names (`server`, `mongo`, `neo4j`,
+# `redis`). The client container exposes port 80 internally, mapped
+# to 8080 on the host so it doesn't collide with anything else.
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: synergyhack-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: synergyhack
+      MONGO_INITDB_ROOT_PASSWORD: dev_password
+      MONGO_INITDB_DATABASE: synergyhack
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1}).ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - synergy-net
+
+  neo4j:
+    image: neo4j:5-community
+    container_name: synergyhack-neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/dev_password
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - synergy-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: synergyhack-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - synergy-net
+
+  # Express API server. Reads from .env in the project root for
+  # connection strings and JWT secret. Depends on the three data
+  # stores being healthy before starting.
+  server:
+    build:
+      context: .
+      dockerfile: ./server/Dockerfile
+    container_name: synergyhack-server
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGO_URI: mongodb://synergyhack:dev_password@mongo:27017/synergyhack?authSource=admin
+      MONGO_DB: synergyhack
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: dev_password
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-dev_secret_change_me_in_production}
+      JWT_EXPIRES_IN: 24h
+    depends_on:
+      mongo:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - synergy-net
+    # No host port mapping. Only the client container reaches the
+    # server, via the synergy-net network. This is the reverse-proxy
+    # design: external traffic only touches the client (Nginx).
+
+  # Nginx-served React SPA. Multi-stage Dockerfile builds the Vite
+  # bundle then serves it via Nginx, which also reverse-proxies
+  # /api/* to the server container.
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: synergyhack-client
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+    networks:
+      - synergy-net
+
+volumes:
+  mongo_data:
+  neo4j_data:
+  neo4j_logs:
+  redis_data:
+
+networks:
+  synergy-net:
+    driver: bridge
