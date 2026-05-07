@@ -47,3 +47,6 @@ client/.vite/
 /package-lock.json
 /node_modules/
 docs/finish-plan.md
+
+# Local env backups
+.env.*.bak
