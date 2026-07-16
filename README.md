@@ -25,8 +25,8 @@ cp .env.example .env
 docker compose up -d --build
 
 # Seed both databases (first run only)
-docker compose exec server node scripts/seed-mongo.js
-docker compose exec server node scripts/seed-neo4j.js
+docker compose exec server node ../scripts/seed-mongo.js
+docker compose exec server node ../scripts/seed-neo4j.js
 
 # Open the app
 open http://localhost:8080
