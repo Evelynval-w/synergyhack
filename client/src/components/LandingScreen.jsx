@@ -8,7 +8,7 @@
 // the hardest part of any hackathon, and gap-coverage matching is
 // the differentiator (find what's MISSING, not what's similar).
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../api/client';
 
 const ROLES = [
@@ -95,6 +95,7 @@ export default function LandingScreen() {
 
               <div className="p-7">
                 {tab === 'signin' ? <SignInForm /> : <RegisterForm />}
+                <OAuthButtons />
               </div>
             </div>
           </div>
@@ -214,31 +215,56 @@ function SignInForm() {
         <span className="font-mono text-slate-600">lina_dev</span>{' '}
         — password{' '}
         <span className="font-mono text-slate-600">password123</span>.
+        Org host: <span className="font-mono text-slate-600">synergy_org</span>.
       </p>
     </>
   );
 }
 
 function RegisterForm() {
+  const [accountType, setAccountType] = useState('individual'); // 'individual' | 'organization'
   const [form, setForm] = useState({
     username: '',
     email: '',
     password: '',
     role: '',
+    org_name: '',
+    website: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
 
   const update = (key, value) => setForm(f => ({ ...f, [key]: value }));
+  const isOrg = accountType === 'organization';
+
+  const canSubmit = isOrg
+    ? form.org_name.trim() && form.email.trim() && form.password
+    : form.username.trim() && form.email.trim() && form.password;
 
   const handleSubmit = async () => {
-    if (!form.username.trim() || !form.email.trim() || !form.password) return;
+    if (!canSubmit) return;
     setLoading(true);
     setError(null);
     setFieldErrors({});
     try {
-      await api.register(form);
+      const payload = isOrg
+        ? {
+            account_type: 'organization',
+            org_name: form.org_name.trim(),
+            email: form.email.trim(),
+            password: form.password,
+            website: form.website.trim() || undefined,
+            username: form.username.trim() || undefined,
+          }
+        : {
+            account_type: 'individual',
+            username: form.username.trim(),
+            email: form.email.trim(),
+            password: form.password,
+            role: form.role || undefined,
+          };
+      await api.register(payload);
       window.dispatchEvent(new Event('synergy:auth-changed'));
     } catch (err) {
       if (err.fields) {
@@ -255,19 +281,63 @@ function RegisterForm() {
   return (
     <>
       <h2 className="text-lg font-semibold text-slate-900 mb-1">Create your account</h2>
-      <p className="text-sm text-slate-500 mb-5">
+      <p className="text-sm text-slate-500 mb-4">
         Takes about 30 seconds.
       </p>
 
-      <Field label="Username" error={fieldErrors.username}>
-        <input
-          type="text"
-          value={form.username}
-          onChange={e => update('username', e.target.value)}
-          className="w-full px-3 py-2.5 border border-slate-300 rounded-md focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
-          placeholder="3-30 chars, letters/digits/_"
-        />
-      </Field>
+      <div className="flex gap-1 mb-5 p-1 bg-slate-100 rounded-md">
+        <button
+          type="button"
+          onClick={() => setAccountType('individual')}
+          className={`flex-1 text-sm font-medium py-2 rounded transition ${
+            !isOrg ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Individual
+        </button>
+        <button
+          type="button"
+          onClick={() => setAccountType('organization')}
+          className={`flex-1 text-sm font-medium py-2 rounded transition ${
+            isOrg ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Organization
+        </button>
+      </div>
+
+      {isOrg ? (
+        <>
+          <Field label="Organization name" error={fieldErrors.org_name}>
+            <input
+              type="text"
+              value={form.org_name}
+              onChange={e => update('org_name', e.target.value)}
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-md focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
+              placeholder="Acme Hackathons"
+            />
+          </Field>
+          <Field label="Username (optional)" error={fieldErrors.username}>
+            <input
+              type="text"
+              value={form.username}
+              onChange={e => update('username', e.target.value)}
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-md focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
+              placeholder="Auto from org name if blank"
+            />
+          </Field>
+        </>
+      ) : (
+        <Field label="Username" error={fieldErrors.username}>
+          <input
+            type="text"
+            value={form.username}
+            onChange={e => update('username', e.target.value)}
+            className="w-full px-3 py-2.5 border border-slate-300 rounded-md focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
+            placeholder="3-30 chars, letters/digits/_"
+          />
+        </Field>
+      )}
 
       <Field label="Email" error={fieldErrors.email}>
         <input
@@ -289,31 +359,45 @@ function RegisterForm() {
         />
       </Field>
 
-      <Field label="Role (optional)">
-        <select
-          value={form.role}
-          onChange={e => update('role', e.target.value)}
-          className="w-full px-3 py-2.5 border border-slate-300 rounded-md focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition bg-white"
-        >
-          <option value="">Pick later</option>
-          {ROLES.map(r => (
-            <option key={r} value={r}>{r}</option>
-          ))}
-        </select>
-      </Field>
+      {isOrg ? (
+        <Field label="Website (optional)" error={fieldErrors.website}>
+          <input
+            type="url"
+            value={form.website}
+            onChange={e => update('website', e.target.value)}
+            className="w-full px-3 py-2.5 border border-slate-300 rounded-md focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
+            placeholder="https://example.com"
+          />
+        </Field>
+      ) : (
+        <Field label="Role (optional)">
+          <select
+            value={form.role}
+            onChange={e => update('role', e.target.value)}
+            className="w-full px-3 py-2.5 border border-slate-300 rounded-md focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition bg-white"
+          >
+            <option value="">Pick later</option>
+            {ROLES.map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+        </Field>
+      )}
 
       {error && <ErrorBanner>{error}</ErrorBanner>}
 
       <button
         onClick={handleSubmit}
-        disabled={loading || !form.username.trim() || !form.email.trim() || !form.password}
+        disabled={loading || !canSubmit}
         className="mt-2 w-full bg-emerald-500 text-white font-medium py-2.5 rounded-md hover:bg-emerald-600 disabled:bg-slate-300 disabled:cursor-not-allowed transition"
       >
-        {loading ? 'Creating account...' : 'Create account'}
+        {loading ? 'Creating account...' : isOrg ? 'Create organization' : 'Create account'}
       </button>
 
       <p className="text-xs text-slate-400 mt-5 leading-relaxed">
-        You can add your bio, skills, and past projects from your profile after signing in.
+        {isOrg
+          ? 'Organizations can create and host hackathon events after signing in.'
+          : 'You can add your bio, skills, and past projects from your profile after signing in.'}
       </p>
     </>
   );
@@ -338,6 +422,78 @@ function ErrorBanner({ children }) {
     <p className="text-sm text-red-600 mb-4 bg-red-50 border border-red-200 rounded-md px-3 py-2">
       {children}
     </p>
+  );
+}
+
+function OAuthButtons() {
+  const [providers, setProviders] = useState({ google: false, github: false });
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${api.authBase()}/auth/providers`)
+      .then(res => (res.ok ? res.json() : { google: false, github: false }))
+      .then(data => {
+        if (!cancelled) {
+          setProviders({
+            google: !!data.google,
+            github: !!data.github,
+          });
+          setLoaded(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const startOAuth = (provider) => {
+    window.location.href = `${api.authBase()}/auth/${provider}`;
+  };
+
+  if (!loaded) return null;
+
+  const any = providers.google || providers.github;
+  if (!any) {
+    return (
+      <p className="text-xs text-slate-400 mt-5 text-center">
+        SSO is not configured. Set GitHub/Google credentials in `.env` to enable.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-6">
+      <div className="relative mb-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-200" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-white px-2 text-slate-400">or continue with</span>
+        </div>
+      </div>
+      <div className={`grid gap-2 ${providers.google && providers.github ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        {providers.google && (
+          <button
+            type="button"
+            onClick={() => startOAuth('google')}
+            className="text-sm font-medium px-3 py-2.5 rounded-md border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
+          >
+            Google
+          </button>
+        )}
+        {providers.github && (
+          <button
+            type="button"
+            onClick={() => startOAuth('github')}
+            className="text-sm font-medium px-3 py-2.5 rounded-md border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
+          >
+            GitHub
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 

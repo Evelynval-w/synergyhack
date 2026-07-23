@@ -95,4 +95,41 @@ router.post('/:id/requests/:reqId/reject', requireAuth, async (req, res) => {
   }
 });
 
+/**
+ * POST /teams/:id/invites
+ * Body: { userId, message? }
+ * Any team member can invite a user (outbound invite).
+ */
+router.post('/:id/invites', requireAuth, async (req, res) => {
+  try {
+    const doc = await requestService.createInvite({
+      teamId: req.params.id,
+      invitedBy: req.user.sub,
+      userId: req.body?.userId,
+      message: req.body?.message || '',
+    });
+    res.status(201).json(doc);
+  } catch (err) {
+    sendError(res, err);
+  }
+});
+
+router.post('/:id/invites/:reqId/accept', requireAuth, async (req, res) => {
+  try {
+    const updated = await requestService.acceptOutboundInvite(req.params.reqId, req.user.sub);
+    res.json(updated);
+  } catch (err) {
+    sendError(res, err);
+  }
+});
+
+router.post('/:id/invites/:reqId/reject', requireAuth, async (req, res) => {
+  try {
+    const updated = await requestService.rejectOutboundInvite(req.params.reqId, req.user.sub);
+    res.json(updated);
+  } catch (err) {
+    sendError(res, err);
+  }
+});
+
 module.exports = router;

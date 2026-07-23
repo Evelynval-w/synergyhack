@@ -1,66 +1,75 @@
 // server/src/services/auth.service.js
 //
 // Authentication primitives:
-//   - JWT sign/verify (24h expiry, HS256, secret from env)
+//   - JWT sign/verify (expiry from JWT_EXPIRES_IN, HS256, secret from env)
 //   - Password hashing via bcryptjs (10 salt rounds)
 //   - Username + email + password validation
 //
-// We use bcryptjs (pure JS) rather than native bcrypt to avoid
-// node-gyp build failures across architectures. Slightly slower
-// hashing than the C binding, but trivially fast at hackathon scale
-// and zero install friction.
+// Secret/expiry are read at call time (not module load) so Docker
+// Compose / dotenv env is always what sign/verify use.
 
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-const SECRET = process.env.JWT_SECRET || 'dev_secret';
 const SALT_ROUNDS = 10;
 
-// --- JWT ---
+function getSecret() {
+  return process.env.JWT_SECRET || 'dev_secret';
+}
+
+function getExpiresIn() {
+  return process.env.JWT_EXPIRES_IN || '24h';
+}
 
 function signToken(user) {
   return jwt.sign(
     { sub: user.id, username: user.username },
-    SECRET,
-    { expiresIn: '24h' }
+    getSecret(),
+    { expiresIn: getExpiresIn() }
   );
 }
 
 function verifyToken(token) {
-  return jwt.verify(token, SECRET);
+  return jwt.verify(token, getSecret());
 }
 
-// --- Password hashing ---
-
-/**
- * Hashes a plaintext password with bcrypt + 10 salt rounds.
- * Returns the full hash string ($2b$10$...) which contains both
- * the salt and the hash; storing this in user.password_hash is
- * sufficient for later verification.
- */
 async function hashPassword(plaintext) {
   return bcrypt.hash(plaintext, SALT_ROUNDS);
 }
 
-/**
- * Constant-time comparison via bcrypt — never use === on hashes.
- */
 async function verifyPassword(plaintext, storedHash) {
   if (!plaintext || !storedHash) return false;
   return bcrypt.compare(plaintext, storedHash);
 }
 
-// --- Validation ---
-
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,30}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-function validateRegisterInput({ username, email, password, role }) {
+function slugify(input) {
+  return String(input || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+}
+
+function validateRegisterInput({ username, email, password, role, account_type, org_name }) {
   const errors = {};
+  const isOrg = account_type === 'organization';
 
-  if (!username || !USERNAME_RE.test(username)) {
+  if (isOrg) {
+    if (!org_name || !String(org_name).trim()) {
+      errors.org_name = 'Organization name is required.';
+    }
+    // Username optional for orgs — derived from org_name if missing
+    if (username && !USERNAME_RE.test(username)) {
+      errors.username = 'Username must be 3–30 chars: letters, digits, or underscores.';
+    }
+  } else if (!username || !USERNAME_RE.test(username)) {
     errors.username = 'Username must be 3–30 chars: letters, digits, or underscores.';
   }
+
   if (!email || !EMAIL_RE.test(email)) {
     errors.email = 'Email must look like name@example.com.';
   }
@@ -69,6 +78,9 @@ function validateRegisterInput({ username, email, password, role }) {
   }
   if (role !== undefined && role !== null && role !== '' && typeof role !== 'string') {
     errors.role = 'Role must be a string.';
+  }
+  if (account_type && account_type !== 'individual' && account_type !== 'organization') {
+    errors.account_type = 'account_type must be individual or organization.';
   }
 
   return Object.keys(errors).length > 0 ? errors : null;
@@ -80,4 +92,7 @@ module.exports = {
   hashPassword,
   verifyPassword,
   validateRegisterInput,
+  USERNAME_RE,
+  SLUG_RE,
+  slugify,
 };

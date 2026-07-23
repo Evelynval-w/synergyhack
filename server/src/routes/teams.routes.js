@@ -1,9 +1,11 @@
 // server/src/routes/teams.routes.js
 //
-// Team listing + search + detail.
-//   GET /teams             — list teams, optional ?q= text search
-//   GET /teams/:id         — single team's full info: description,
-//                            hackathon details, members, combined skills
+// Team listing + search + detail + create/update/leave.
+//   GET    /teams             — list teams, optional ?q= text search
+//   POST   /teams             — create a team (auth)
+//   GET    /teams/:id         — full team detail
+//   PATCH  /teams/:id         — owner edits name/description/capacity
+//   POST   /teams/:id/leave   — member leaves (owner cannot leave)
 //
 // The list and detail are Mongo-backed (description and hackathon
 // metadata live there) with Neo4j called only for member skill
@@ -14,8 +16,16 @@ const express = require('express');
 const { db } = require('../db/mongo');
 const { session } = require('../db/neo4j');
 const { requireAuth } = require('../middleware/auth');
+const graphSync = require('../services/graph-sync.service');
 
 const router = express.Router();
+
+function generateTeamId() {
+  const random = Math.floor(Math.random() * 1e15)
+    .toString()
+    .padStart(22, '0');
+  return '67' + random;
+}
 
 /**
  * GET /teams
@@ -69,6 +79,185 @@ router.get('/', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('GET /teams failed:', err);
     res.status(500).json({ error: 'List failed' });
+  }
+});
+
+/**
+ * POST /teams
+ * Creates a team for an existing hackathon. Creator becomes the
+ * sole initial member and Neo4j Team + MEMBER_OF are synced.
+ */
+router.post('/', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.sub;
+    const { name, description, hackathonId, capacity } = req.body || {};
+
+    const trimmedName = typeof name === 'string' ? name.trim() : '';
+    if (!trimmedName) {
+      return res.status(400).json({ error: 'Team name is required' });
+    }
+    if (!hackathonId || typeof hackathonId !== 'string') {
+      return res.status(400).json({ error: 'hackathonId is required' });
+    }
+
+    const cap = Number(capacity);
+    if (!Number.isFinite(cap) || cap < 1 || cap > 20) {
+      return res.status(400).json({ error: 'capacity must be between 1 and 20' });
+    }
+
+    const hackathon = await db().collection('hackathons').findOne(
+      { _id: hackathonId },
+      { projection: { _id: 1 } }
+    );
+    if (!hackathon) {
+      return res.status(400).json({ error: 'Hackathon not found' });
+    }
+
+    const _id = generateTeamId();
+    const teamDoc = {
+      _id,
+      name: trimmedName,
+      description: typeof description === 'string' ? description.trim() : '',
+      hackathonId,
+      capacity: Math.round(cap),
+      createdBy: userId,
+      members: [userId],
+      createdAt: new Date().toISOString(),
+    };
+
+    await db().collection('teams').insertOne(teamDoc);
+
+    try {
+      await graphSync.syncTeam(teamDoc);
+      await graphSync.joinTeam(userId, _id);
+    } catch (err) {
+      console.error('[graph-drift] syncTeam/joinTeam on create:', err.message);
+    }
+
+    res.status(201).json({
+      id: _id,
+      name: teamDoc.name,
+      description: teamDoc.description,
+      capacity: teamDoc.capacity,
+      createdBy: teamDoc.createdBy,
+      createdAt: teamDoc.createdAt,
+      hackathonId: teamDoc.hackathonId,
+      members: [userId],
+    });
+  } catch (err) {
+    console.error('POST /teams failed:', err);
+    res.status(500).json({ error: 'Create failed' });
+  }
+});
+
+/**
+ * PATCH /teams/:id
+ * Owner-only update of name, description, and/or capacity.
+ */
+router.patch('/:id', requireAuth, async (req, res) => {
+  try {
+    const teamId = req.params.id;
+    const userId = req.user.sub;
+    const team = await db().collection('teams').findOne({ _id: teamId });
+    if (!team) return res.status(404).json({ error: 'Team not found' });
+    if (team.createdBy !== userId) {
+      return res.status(403).json({ error: 'Only the team creator can edit this team.' });
+    }
+
+    const patch = {};
+    const { name, description, capacity } = req.body || {};
+
+    if (name !== undefined) {
+      const trimmed = typeof name === 'string' ? name.trim() : '';
+      if (!trimmed) return res.status(400).json({ error: 'Team name cannot be empty' });
+      patch.name = trimmed;
+    }
+    if (description !== undefined) {
+      if (typeof description !== 'string') {
+        return res.status(400).json({ error: 'description must be a string' });
+      }
+      patch.description = description.trim();
+    }
+    if (capacity !== undefined) {
+      const cap = Number(capacity);
+      if (!Number.isFinite(cap) || cap < 1 || cap > 20) {
+        return res.status(400).json({ error: 'capacity must be between 1 and 20' });
+      }
+      const memberCount = (team.members || []).length;
+      if (Math.round(cap) < memberCount) {
+        return res.status(400).json({
+          error: `capacity cannot be less than current member count (${memberCount})`,
+        });
+      }
+      patch.capacity = Math.round(cap);
+    }
+
+    if (Object.keys(patch).length === 0) {
+      return res.status(400).json({ error: 'No editable fields provided' });
+    }
+
+    await db().collection('teams').updateOne({ _id: teamId }, { $set: patch });
+
+    if (patch.name) {
+      try {
+        await graphSync.syncTeam({ _id: teamId, name: patch.name, hackathonId: team.hackathonId });
+      } catch (err) {
+        console.error('[graph-drift] syncTeam on patch:', err.message);
+      }
+    }
+
+    const updated = await db().collection('teams').findOne({ _id: teamId });
+    res.json({
+      id: updated._id,
+      name: updated.name,
+      description: updated.description || '',
+      capacity: updated.capacity,
+      createdBy: updated.createdBy,
+      createdAt: updated.createdAt,
+      hackathonId: updated.hackathonId,
+    });
+  } catch (err) {
+    console.error('PATCH /teams/:id failed:', err);
+    res.status(500).json({ error: 'Update failed' });
+  }
+});
+
+/**
+ * POST /teams/:id/leave
+ * Non-owner members can leave. Owners cannot leave in v1.
+ */
+router.post('/:id/leave', requireAuth, async (req, res) => {
+  try {
+    const teamId = req.params.id;
+    const userId = req.user.sub;
+    const team = await db().collection('teams').findOne({ _id: teamId });
+    if (!team) return res.status(404).json({ error: 'Team not found' });
+
+    if (team.createdBy === userId) {
+      return res.status(400).json({
+        error: 'Team creators cannot leave their team.',
+      });
+    }
+
+    if (!(team.members || []).includes(userId)) {
+      return res.status(400).json({ error: 'You are not a member of this team.' });
+    }
+
+    await db().collection('teams').updateOne(
+      { _id: teamId },
+      { $pull: { members: userId } }
+    );
+
+    try {
+      await graphSync.leaveTeam(userId, teamId);
+    } catch (err) {
+      console.error('[graph-drift] leaveTeam:', err.message);
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('POST /teams/:id/leave failed:', err);
+    res.status(500).json({ error: 'Leave failed' });
   }
 });
 

@@ -88,7 +88,7 @@ router.patch('/me', requireAuth, async (req, res) => {
  */
 router.get('/:id', requireAuth, async (req, res) => {
   try {
-    const user = await users.getUserProfile(req.params.id);
+    const user = await users.getUserProfile(req.params.id, { viewerId: req.user.sub });
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
   } catch (err) {

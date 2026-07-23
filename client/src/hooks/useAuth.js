@@ -16,6 +16,7 @@ export default function useAuth() {
     username: api.getUsername(),
     userId: api.getUserId(),
     authed: api.isAuthenticated(),
+    ready: !api.isAuthenticated(),
   }));
 
   useEffect(() => {
@@ -23,13 +24,25 @@ export default function useAuth() {
       username: api.getUsername(),
       userId: api.getUserId(),
       authed: api.isAuthenticated(),
+      ready: true,
     });
 
-    // Cross-tab logout / login (storage event) AND same-tab updates
-    // dispatched manually after api.login / api.logout.
+    // Soft-validate any stored token once on boot so a stale JWT
+    // cannot leave the user stuck in the authenticated shell.
+    let cancelled = false;
+    (async () => {
+      if (!api.isAuthenticated()) {
+        if (!cancelled) refresh();
+        return;
+      }
+      await api.validateSession();
+      if (!cancelled) refresh();
+    })();
+
     window.addEventListener('storage', refresh);
     window.addEventListener('synergy:auth-changed', refresh);
     return () => {
+      cancelled = true;
       window.removeEventListener('storage', refresh);
       window.removeEventListener('synergy:auth-changed', refresh);
     };

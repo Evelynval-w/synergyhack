@@ -1,0 +1,15 @@
+[
+  {
+    "_id": "650000000000000000009901",
+    "username": "synergy_org",
+    "email": "org@synergyhack.demo",
+    "account_type": "organization",
+    "org_name": "SynergyHack Demo Org",
+    "org_slug": "synergy-demo-org",
+    "website": "https://example.com",
+    "bio": "Demo organization that hosts hackathon events on SynergyHack.",
+    "role": "Organization",
+    "skills": [],
+    "github_url": ""
+  }
+]

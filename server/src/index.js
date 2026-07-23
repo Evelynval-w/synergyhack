@@ -31,6 +31,8 @@ const dmsRoutes = require('./routes/dms.routes');
 const skillsRoutes = require('./routes/skills.routes');
 const teamRequestsRoutes = require('./routes/teamRequests.routes');
 const myRequestsRoutes = require('./routes/myRequests.routes');
+const hackathonsRoutes = require('./routes/hackathons.routes');
+const notificationsRoutes = require('./routes/notifications.routes');
 
 app.use('/auth', authRoutes);
 app.use('/heartbeat', heartbeatRoutes);
@@ -38,6 +40,8 @@ app.use('/teams', messageRoutes);     // mounts /teams/:id/messages
 app.use('/teams', matchRoutes);       // mounts /teams/:id/matches
 app.use('/teams', teamRequestsRoutes); // mounts /teams/:id/requests
 app.use('/teams', teamRoutes);
+app.use('/hackathons', hackathonsRoutes);
+app.use('/notifications', notificationsRoutes);
 app.use('/analytics', analyticsRoutes);
 app.use('/users', usersRoutes);
 app.use('/dms', dmsRoutes);           // mounts /dms/:peerId/messages
@@ -87,6 +91,10 @@ async function start() {
   try {
     await mongo.connect();
     console.log('Connected to MongoDB');
+
+    const { ensureIndexes } = require('./db/ensureIndexes');
+    await ensureIndexes();
+    console.log('Mongo indexes ensured');
 
     await redis.connect();
     console.log('Connected to Redis');

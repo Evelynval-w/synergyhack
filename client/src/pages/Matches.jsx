@@ -20,6 +20,9 @@ export default function Matches() {
   const [explaining, setExplaining] = useState(null); // the candidate being explained
   const [explanation, setExplanation] = useState([]);
   const [explanationLoading, setExplanationLoading] = useState(false);
+  const [invitingId, setInvitingId] = useState(null);
+  const [invitedIds, setInvitedIds] = useState(() => new Set());
+  const [inviteMsg, setInviteMsg] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -47,6 +50,20 @@ export default function Matches() {
       setExplanation([{ error: err.message }]);
     } finally {
       setExplanationLoading(false);
+    }
+  }
+
+  async function handleInvite(candidate) {
+    setInvitingId(candidate.userId);
+    setInviteMsg(null);
+    try {
+      await api.post(`/teams/${id}/invites`, { userId: candidate.userId });
+      setInvitedIds(prev => new Set([...prev, candidate.userId]));
+      setInviteMsg(`Invited ${candidate.username} to the team.`);
+    } catch (err) {
+      setInviteMsg(err.message);
+    } finally {
+      setInvitingId(null);
     }
   }
 
@@ -78,15 +95,30 @@ export default function Matches() {
         </h1>
         <p className="text-sm text-slate-500 mt-1">
           Ranked by how much each candidate's skills complement the team's existing strengths.
+          Invite anyone to join your team directly.
         </p>
       </div>
+
+      {inviteMsg && (
+        <div className="mb-4 text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-md px-3 py-2">
+          {inviteMsg}
+        </div>
+      )}
 
       {matches.length === 0 ? (
         <div className="text-center text-slate-500 py-12">No matches found.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {matches.map((m, i) => (
-            <MatchCard key={m.userId} match={m} rank={i + 1} onExplain={handleExplain} />
+            <MatchCard
+              key={m.userId}
+              match={m}
+              rank={i + 1}
+              onExplain={handleExplain}
+              onInvite={handleInvite}
+              inviting={invitingId === m.userId}
+              inviteDone={invitedIds.has(m.userId)}
+            />
           ))}
         </div>
       )}
