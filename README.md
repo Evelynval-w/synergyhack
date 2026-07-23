@@ -36,11 +36,9 @@ cp .env.example .env
 # Bring up everything: Mongo, Redis, Neo4j, server, client
 docker compose up -d --build
 
-# Seed both databases (first run only).
-# Scripts live at /app/synergyhack/scripts while the container CWD is
-# /app/synergyhack/server, so set the working directory explicitly.
-docker compose exec -w /app/synergyhack server node scripts/seed-mongo.js
-docker compose exec -w /app/synergyhack server node scripts/seed-neo4j.js
+# Seed both databases (first run only)
+docker compose exec server node ../scripts/seed-mongo.js
+docker compose exec server node ../scripts/seed-neo4j.js
 
 # Open the app
 open http://localhost:8080
