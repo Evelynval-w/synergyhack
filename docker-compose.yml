@@ -80,7 +80,12 @@ services:
       dockerfile: ./server/Dockerfile
     container_name: synergyhack-server
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
+      # Keep in-compose service DNS even if .env uses localhost for host-side runs.
+      # OAuth client IDs/secrets come from env_file (.env) — do not set empty
+      # ${VAR:-} overrides here or they wipe the real values.
       NODE_ENV: production
       PORT: 3000
       MONGO_URI: mongodb://synergyhack:dev_password@mongo:27017/synergyhack?authSource=admin
@@ -90,7 +95,9 @@ services:
       NEO4J_PASSWORD: dev_password
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-dev_secret_change_me_in_production}
-      JWT_EXPIRES_IN: 24h
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      OAUTH_CALLBACK_BASE_URL: ${OAUTH_CALLBACK_BASE_URL:-http://localhost:8080/api}
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:8080}
     depends_on:
       mongo:
         condition: service_healthy

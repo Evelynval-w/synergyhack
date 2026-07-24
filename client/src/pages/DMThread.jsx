@@ -52,11 +52,19 @@ export default function DMThread() {
 
     let cancelled = false;
     api.get(`/dms/${peerId}/messages`)
-      .then(data => {
+      .then(async data => {
         if (cancelled) return;
         const fresh = data.filter(m => !seenIds.current.has(m.id));
         fresh.forEach(m => seenIds.current.add(m.id));
         setMessages(fresh);
+        const last = data?.length ? data[data.length - 1].id : null;
+        try {
+          await api.post('/notifications/chat-read', {
+            channelType: 'dm',
+            peerId,
+            streamId: last,
+          });
+        } catch { /* ignore */ }
       })
       .catch(err => {
         if (cancelled) return;
@@ -65,6 +73,17 @@ export default function DMThread() {
 
     return () => { cancelled = true; };
   }, [peerId]);
+
+  // Advance read cursor while viewing the thread.
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const lastId = messages[messages.length - 1].id;
+    api.post('/notifications/chat-read', {
+      channelType: 'dm',
+      peerId,
+      streamId: lastId,
+    }).catch(() => {});
+  }, [peerId, messages]);
 
   // Polling.
   useEffect(() => {

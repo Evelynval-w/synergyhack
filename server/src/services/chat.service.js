@@ -179,9 +179,47 @@ async function getDMs(userA, userB, sinceId) {
   return readStream(dmKey(userA, userB), sinceId);
 }
 
+function readCursorKey(userId, channel) {
+  return `chat:read:${userId}:${channel}`;
+}
+
+async function markChannelRead(userId, channel, streamId) {
+  if (!userId || !channel || !streamId) return;
+  await client.set(readCursorKey(userId, channel), streamId);
+}
+
+async function getChannelCursor(userId, channel) {
+  return client.get(readCursorKey(userId, channel));
+}
+
+/**
+ * Counts messages after the user's read cursor that were not sent by them.
+ */
+async function countUnreadOnChannel(userId, channel) {
+  const cursor = (await getChannelCursor(userId, channel)) || '0';
+  const messages = await readStream(channel, cursor);
+  return messages.filter(m => m.from !== userId).length;
+}
+
+async function getLatestStreamId(channel) {
+  try {
+    const res = await client.xRevRange(channel, '+', '-', { COUNT: 1 });
+    return res[0]?.id || null;
+  } catch {
+    return null;
+  }
+}
+
 module.exports = {
   sendTeamMessage,
   getTeamMessages,
   sendDM,
   getDMs,
+  teamKey,
+  dmKey,
+  markChannelRead,
+  getChannelCursor,
+  countUnreadOnChannel,
+  getLatestStreamId,
+  isTeamMember,
 };

@@ -9,6 +9,12 @@
 //     to the server container. No CORS, no separate origin.
 const API_BASE = import.meta.env.DEV ? 'http://localhost:3000' : '/api';
 
+const AUTH_FAILURE_MESSAGES = new Set([
+  'Invalid token',
+  'Session expired',
+  'No token',
+]);
+
 function getToken() {
   return localStorage.getItem('synergy_token');
 }
@@ -36,6 +42,22 @@ function setUserId(userId) {
   else localStorage.removeItem('synergy_user_id');
 }
 
+function clearLocalSession() {
+  setToken(null);
+  setUsername(null);
+  setUserId(null);
+  localStorage.removeItem('synergy_account_type');
+}
+
+function notifyAuthChanged() {
+  window.dispatchEvent(new Event('synergy:auth-changed'));
+}
+
+function clearSessionAndNotify() {
+  clearLocalSession();
+  notifyAuthChanged();
+}
+
 async function request(path, options = {}) {
   const token = getToken();
   const headers = {
@@ -51,7 +73,19 @@ async function request(path, options = {}) {
     let payload = null;
     try { payload = JSON.parse(text); } catch { /* not json */ }
 
-    const err = new Error(payload?.error || `Request failed: ${res.status}`);
+    const message = payload?.error || `Request failed: ${res.status}`;
+
+    // Stale/invalid JWT leaves the UI "logged in" while every API
+    // returns 401. Clear local session so the app falls back to landing.
+    if (
+      res.status === 401
+      && !options.skipAuthRecovery
+      && (AUTH_FAILURE_MESSAGES.has(message) || !!token)
+    ) {
+      clearSessionAndNotify();
+    }
+
+    const err = new Error(message);
     err.status = res.status;
     err.fields = payload?.fields;
     err.field = payload?.field;
@@ -62,36 +96,80 @@ async function request(path, options = {}) {
 }
 
 const api = {
-  get: (path) => request(path),
-  post: (path, body) => request(path, { method: 'POST', body: JSON.stringify(body) }),
-  patch: (path, body) => request(path, { method: 'PATCH', body: JSON.stringify(body) }),
+  get: (path, options) => request(path, options),
+  post: (path, body, options) => request(path, { method: 'POST', body: JSON.stringify(body ?? {}), ...options }),
+  patch: (path, body, options) => request(path, { method: 'PATCH', body: JSON.stringify(body ?? {}), ...options }),
+  put: (path, body, options) => request(path, { method: 'PUT', body: JSON.stringify(body ?? {}), ...options }),
 
   async login(username, password) {
     const data = await request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
+      skipAuthRecovery: true,
     });
     setToken(data.token);
     setUsername(data.username || username);
     setUserId(data.userId);
+    if (data.account_type) localStorage.setItem('synergy_account_type', data.account_type);
     return data;
   },
 
-  async register({ username, email, password, role, bio }) {
+  async register(payload) {
     const data = await request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ username, email, password, role, bio }),
+      body: JSON.stringify(payload),
+      skipAuthRecovery: true,
     });
     setToken(data.token);
-    setUsername(data.username || username);
+    setUsername(data.username);
     setUserId(data.userId);
+    if (data.account_type) localStorage.setItem('synergy_account_type', data.account_type);
     return data;
   },
+  async logout() {
+    try {
+      if (getToken()) {
+        await request('/auth/logout', {
+          method: 'POST',
+          body: '{}',
+          skipAuthRecovery: true,
+        });
+      }
+    } catch {
+      // Still clear local state even if the server session is already gone
+    }
+    clearLocalSession();
+  },
 
-  logout() {
-    setToken(null);
-    setUsername(null);
-    setUserId(null);
+  acceptOAuthSession({ token, userId, username }) {
+    setToken(token);
+    setUsername(username);
+    setUserId(userId);
+  },
+
+  clearSessionAndNotify,
+
+  /**
+   * Soft-validate a stored token against the API. Returns true if
+   * still valid; clears session and returns false on auth failure.
+   */
+  async validateSession() {
+    if (!getToken()) return false;
+    try {
+      await request('/users/me', { skipAuthRecovery: true });
+      return true;
+    } catch (err) {
+      if (err.status === 401) {
+        clearSessionAndNotify();
+        return false;
+      }
+      // Network blip — keep the local session; pages will retry.
+      return true;
+    }
+  },
+
+  authBase() {
+    return API_BASE;
   },
 
   isAuthenticated() {

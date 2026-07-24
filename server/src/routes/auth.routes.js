@@ -20,6 +20,7 @@ const express = require('express');
 const auth = require('../services/auth.service');
 const sessionService = require('../services/session.service');
 const graphSync = require('../services/graph-sync.service');
+const oauth = require('../services/oauth.service');
 const { db } = require('../db/mongo');
 
 const router = express.Router();
@@ -37,31 +38,55 @@ function generateUserId() {
 
 router.post('/register', async (req, res) => {
   try {
-    const { username, email, password, role, bio } = req.body || {};
+    const { username, email, password, role, bio, account_type, org_name, website } = req.body || {};
+    const isOrg = account_type === 'organization';
 
-    // Validation
-    const errors = auth.validateRegisterInput({ username, email, password, role });
+    const errors = auth.validateRegisterInput({
+      username,
+      email,
+      password,
+      role,
+      account_type: account_type || 'individual',
+      org_name,
+    });
     if (errors) {
       return res.status(400).json({ error: 'Validation failed', fields: errors });
     }
 
-    const usernameLower = username.trim().toLowerCase();
     const emailLower = email.trim().toLowerCase();
+    let usernameLower;
+    let orgSlug = null;
 
-    // Uniqueness — explicit check gives a friendlier error than a
-    // raw Mongo E11000 duplicate-key error.
-    const existing = await db().collection('users').findOne({
-      $or: [{ username: usernameLower }, { email: emailLower }],
-    });
+    if (isOrg) {
+      const name = org_name.trim();
+      orgSlug = auth.slugify(name);
+      if (!orgSlug || orgSlug.length < 2) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          fields: { org_name: 'Organization name must yield a valid slug.' },
+        });
+      }
+      usernameLower = (username && username.trim().toLowerCase())
+        || orgSlug.replace(/-/g, '_').slice(0, 30);
+      if (usernameLower.length < 3) usernameLower = `org_${usernameLower}`.slice(0, 30);
+    } else {
+      usernameLower = username.trim().toLowerCase();
+    }
+
+    const orQuery = [{ username: usernameLower }, { email: emailLower }];
+    if (orgSlug) orQuery.push({ org_slug: orgSlug });
+
+    const existing = await db().collection('users').findOne({ $or: orQuery });
     if (existing) {
-      const field = existing.username === usernameLower ? 'username' : 'email';
+      let field = 'email';
+      if (existing.username === usernameLower) field = 'username';
+      else if (existing.org_slug === orgSlug) field = 'org_name';
       return res.status(409).json({
-        error: `That ${field} is already taken.`,
+        error: `That ${field === 'org_name' ? 'organization name' : field} is already taken.`,
         field,
       });
     }
 
-    // Hash + insert
     const password_hash = await auth.hashPassword(password);
     const _id = generateUserId();
 
@@ -70,30 +95,42 @@ router.post('/register', async (req, res) => {
       username: usernameLower,
       email: emailLower,
       password_hash,
-      role: role || '',
+      role: isOrg ? (role || 'Organization') : (role || ''),
       bio: bio || '',
       skills: [],
       skill_names: [],
+      auth_providers: [],
+      account_type: isOrg ? 'organization' : 'individual',
+      profile_visibility: {
+        show_current_teams: true,
+        show_past_projects: true,
+      },
       created_at: new Date(),
     };
 
+    if (isOrg) {
+      userDoc.org_name = org_name.trim();
+      userDoc.org_slug = orgSlug;
+      userDoc.website = typeof website === 'string' ? website.trim() : '';
+    }
+
     await db().collection('users').insertOne(userDoc);
 
-    // Mirror to Neo4j so the user shows up in match traversal etc.
     try {
       await graphSync.syncUser({ _id, username: usernameLower });
     } catch (err) {
-      // If Neo4j sync fails, the Mongo doc still exists — we log but
-      // don't roll back. graph-sync is idempotent so a later seed/sync
-      // can recover the missing edge.
       console.error('graph-sync.syncUser failed during register:', err.message);
     }
 
-    // Issue session
     const token = auth.signToken({ id: _id, username: usernameLower });
     await sessionService.createSession(token, _id);
 
-    res.status(201).json({ token, userId: _id, username: usernameLower });
+    res.status(201).json({
+      token,
+      userId: _id,
+      username: usernameLower,
+      account_type: userDoc.account_type,
+    });
   } catch (err) {
     console.error('register failed:', err);
     res.status(500).json({ error: 'Internal error' });
@@ -119,13 +156,11 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
-    // Backwards-compat: seeded users without a password_hash get the
-    // demo password; this lets the existing fixture flow keep working
-    // until the seed bakes hashes in. After re-seeding everyone has
-    // a hash; this branch is dead code that we leave for safety.
+    // SSO-only accounts have no password_hash — direct them to OAuth.
     if (!user.password_hash) {
-      console.warn(`User ${user.username} has no password_hash — re-seed Mongo to apply demo password`);
-      return res.status(401).json({ error: 'Invalid username or password' });
+      return res.status(401).json({
+        error: 'This account uses Google or GitHub sign-in. Use the SSO buttons instead.',
+      });
     }
 
     if (!password) {
@@ -140,7 +175,12 @@ router.post('/login', async (req, res) => {
     const token = auth.signToken({ id: user._id, username: user.username });
     await sessionService.createSession(token, user._id);
 
-    res.json({ token, userId: user._id, username: user.username });
+    res.json({
+      token,
+      userId: user._id,
+      username: user.username,
+      account_type: user.account_type || 'individual',
+    });
   } catch (err) {
     console.error('login failed:', err);
     res.status(500).json({ error: 'Internal error' });
@@ -155,6 +195,77 @@ router.post('/logout', async (req, res) => {
   await sessionService.destroySession(token);
 
   res.json({ ok: true });
+});
+
+// --- OAuth (Google / GitHub) ---
+
+router.get('/providers', (req, res) => {
+  res.json({
+    google: oauth.isConfigured('google'),
+    github: oauth.isConfigured('github'),
+  });
+});
+
+router.get('/google', async (req, res) => {
+  try {
+    if (!oauth.isConfigured('google')) {
+      return res.status(503).json({ error: 'Google OAuth is not configured' });
+    }
+    const state = await oauth.createState('google');
+    res.redirect(oauth.authUrl('google', state));
+  } catch (err) {
+    console.error('GET /auth/google failed:', err);
+    res.status(500).json({ error: 'OAuth start failed' });
+  }
+});
+
+router.get('/github', async (req, res) => {
+  try {
+    if (!oauth.isConfigured('github')) {
+      return res.status(503).json({ error: 'GitHub OAuth is not configured' });
+    }
+    const state = await oauth.createState('github');
+    res.redirect(oauth.authUrl('github', state));
+  } catch (err) {
+    console.error('GET /auth/github failed:', err);
+    res.status(500).json({ error: 'OAuth start failed' });
+  }
+});
+
+router.get('/google/callback', async (req, res) => {
+  try {
+    const { code, state, error } = req.query;
+    if (error) return res.redirect(oauth.errorRedirect(String(error)));
+    const provider = await oauth.consumeState(state);
+    if (provider !== 'google') {
+      return res.redirect(oauth.errorRedirect('Invalid OAuth state'));
+    }
+    if (!code) return res.redirect(oauth.errorRedirect('Missing authorization code'));
+    const identity = await oauth.exchangeGoogle(String(code));
+    const session = await oauth.completeOAuthLogin(identity);
+    res.redirect(oauth.successRedirect(session));
+  } catch (err) {
+    console.error('GET /auth/google/callback failed:', err);
+    res.redirect(oauth.errorRedirect(err.message || 'Google sign-in failed'));
+  }
+});
+
+router.get('/github/callback', async (req, res) => {
+  try {
+    const { code, state, error } = req.query;
+    if (error) return res.redirect(oauth.errorRedirect(String(error)));
+    const provider = await oauth.consumeState(state);
+    if (provider !== 'github') {
+      return res.redirect(oauth.errorRedirect('Invalid OAuth state'));
+    }
+    if (!code) return res.redirect(oauth.errorRedirect('Missing authorization code'));
+    const identity = await oauth.exchangeGithub(String(code));
+    const session = await oauth.completeOAuthLogin(identity);
+    res.redirect(oauth.successRedirect(session));
+  } catch (err) {
+    console.error('GET /auth/github/callback failed:', err);
+    res.redirect(oauth.errorRedirect(err.message || 'GitHub sign-in failed'));
+  }
 });
 
 module.exports = router;

@@ -11,6 +11,11 @@
 const { db } = require('../db/mongo');
 const graphSync = require('./graph-sync.service');
 
+const DEFAULT_VISIBILITY = {
+  show_current_teams: true,
+  show_past_projects: true,
+};
+
 const PUBLIC_PROJECTION = {
   _id: 1,
   username: 1,
@@ -19,6 +24,11 @@ const PUBLIC_PROJECTION = {
   skills: 1,
   skill_names: 1,
   github_url: 1,
+  profile_visibility: 1,
+  account_type: 1,
+  org_name: 1,
+  org_slug: 1,
+  website: 1,
 };
 
 const SELF_PROJECTION = {
@@ -26,19 +36,91 @@ const SELF_PROJECTION = {
   email: 1,
 };
 
-// Email regex — same shape as register validation
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// Whitelist of fields the user can edit on their own profile.
-// Anything else in the patch payload is ignored — defense in depth so
-// a malicious client can't sneak in `password_hash` or `_id`.
 const EDITABLE_FIELDS = new Set([
   'bio',
   'role',
   'email',
   'github_url',
   'skills',
+  'profile_visibility',
+  'org_name',
+  'website',
 ]);
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeVisibility(raw) {
+  const src = raw && typeof raw === 'object' ? raw : {};
+  return {
+    show_current_teams: src.show_current_teams !== false,
+    show_past_projects: src.show_past_projects !== false,
+  };
+}
+
+async function fetchCurrentTeams(userId) {
+  return db().collection('teams')
+    .find(
+      { members: userId },
+      { projection: { _id: 1, name: 1, hackathonId: 1 } }
+    )
+    .sort({ name: 1 })
+    .toArray();
+}
+
+function pastProjectsLookupStages() {
+  return [
+    {
+      $lookup: {
+        from: 'past_projects',
+        let: { uid: '$_id' },
+        pipeline: [
+          { $match: { $expr: { $in: ['$$uid', '$members.userId'] } } },
+          {
+            $project: {
+              _id: 1, title: 1, hackathonId: 1, rating: 1,
+              skills_used: 1, members: 1,
+            },
+          },
+          { $sort: { rating: -1 } },
+        ],
+        as: 'pastProjects',
+      },
+    },
+    {
+      $addFields: {
+        pastProjects: {
+          $map: {
+            input: '$pastProjects',
+            as: 'p',
+            in: {
+              _id: '$$p._id',
+              title: '$$p.title',
+              hackathonId: '$$p.hackathonId',
+              rating: '$$p.rating',
+              skills_used: '$$p.skills_used',
+              roleOnTeam: {
+                $let: {
+                  vars: {
+                    me: {
+                      $first: {
+                        $filter: {
+                          input: '$$p.members',
+                          as: 'm',
+                          cond: { $eq: ['$$m.userId', '$_id'] },
+                        },
+                      },
+                    },
+                  },
+                  in: '$$me.role',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  ];
+}
 
 async function searchUsers(query, { limit = 20 } = {}) {
   if (!query || !query.trim()) return [];
@@ -78,140 +160,64 @@ async function listUsers({ skip = 0, limit = 20 } = {}) {
 
 /**
  * Single user profile (public view) — joins user with past_projects
- * via $lookup and labels each project with the role this user played.
- * Email is NOT included; that's only for getOwnProfile().
+ * and current teams. Respects profile_visibility for public viewers.
  */
-async function getUserProfile(userId) {
+async function getUserProfile(userId, { viewerId = null } = {}) {
   const pipeline = [
     { $match: { _id: userId } },
     { $project: { ...PUBLIC_PROJECTION } },
-    {
-      $lookup: {
-        from: 'past_projects',
-        let: { uid: '$_id' },
-        pipeline: [
-          { $match: { $expr: { $in: ['$$uid', '$members.userId'] } } },
-          {
-            $project: {
-              _id: 1, title: 1, hackathonId: 1, rating: 1,
-              skills_used: 1, members: 1,
-            },
-          },
-          { $sort: { rating: -1 } },
-        ],
-        as: 'pastProjects',
-      },
-    },
-    {
-      $addFields: {
-        pastProjects: {
-          $map: {
-            input: '$pastProjects',
-            as: 'p',
-            in: {
-              _id: '$$p._id',
-              title: '$$p.title',
-              hackathonId: '$$p.hackathonId',
-              rating: '$$p.rating',
-              skills_used: '$$p.skills_used',
-              roleOnTeam: {
-                $let: {
-                  vars: {
-                    me: {
-                      $first: {
-                        $filter: {
-                          input: '$$p.members',
-                          as: 'm',
-                          cond: { $eq: ['$$m.userId', '$_id'] },
-                        },
-                      },
-                    },
-                  },
-                  in: '$$me.role',
-                },
-              },
-            },
-          },
-        },
-      },
-    },
+    ...pastProjectsLookupStages(),
   ];
 
   const [user] = await db().collection('users').aggregate(pipeline).toArray();
-  return user || null;
+  if (!user) return null;
+
+  const visibility = normalizeVisibility(user.profile_visibility);
+  const isSelf = viewerId && viewerId === userId;
+  const currentTeams = await fetchCurrentTeams(userId);
+
+  const result = {
+    ...user,
+    profile_visibility: visibility,
+    currentTeams: (isSelf || visibility.show_current_teams) ? currentTeams : [],
+    pastProjects: (isSelf || visibility.show_past_projects) ? (user.pastProjects || []) : [],
+  };
+
+  // Public viewers don't need to see another user's visibility prefs
+  if (!isSelf) {
+    delete result.profile_visibility;
+  }
+
+  return result;
 }
 
 /**
- * "My" profile — same shape as getUserProfile but includes email.
- * Used by GET /users/me so the editor can pre-fill the email field.
+ * "My" profile — same shape as getUserProfile but includes email
+ * and always shows full teams/projects plus visibility flags.
  */
 async function getOwnProfile(userId) {
   const pipeline = [
     { $match: { _id: userId } },
     { $project: { ...SELF_PROJECTION } },
-    {
-      $lookup: {
-        from: 'past_projects',
-        let: { uid: '$_id' },
-        pipeline: [
-          { $match: { $expr: { $in: ['$$uid', '$members.userId'] } } },
-          {
-            $project: {
-              _id: 1, title: 1, hackathonId: 1, rating: 1,
-              skills_used: 1, members: 1,
-            },
-          },
-          { $sort: { rating: -1 } },
-        ],
-        as: 'pastProjects',
-      },
-    },
-    {
-      $addFields: {
-        pastProjects: {
-          $map: {
-            input: '$pastProjects',
-            as: 'p',
-            in: {
-              _id: '$$p._id',
-              title: '$$p.title',
-              hackathonId: '$$p.hackathonId',
-              rating: '$$p.rating',
-              skills_used: '$$p.skills_used',
-              roleOnTeam: {
-                $let: {
-                  vars: {
-                    me: {
-                      $first: {
-                        $filter: {
-                          input: '$$p.members',
-                          as: 'm',
-                          cond: { $eq: ['$$m.userId', '$_id'] },
-                        },
-                      },
-                    },
-                  },
-                  in: '$$me.role',
-                },
-              },
-            },
-          },
-        },
-      },
-    },
+    ...pastProjectsLookupStages(),
   ];
 
   const [user] = await db().collection('users').aggregate(pipeline).toArray();
-  return user || null;
+  if (!user) return null;
+
+  const visibility = normalizeVisibility(user.profile_visibility);
+  const currentTeams = await fetchCurrentTeams(userId);
+
+  return {
+    ...user,
+    profile_visibility: visibility,
+    currentTeams,
+    pastProjects: user.pastProjects || [],
+  };
 }
 
 /**
  * Updates the authed user's own profile.
- * - Whitelists editable fields (silently drops anything else)
- * - Validates email format and uniqueness if email is changing
- * - Validates skills array shape
- * - Rebuilds skill_names whenever skills changes
- * - Triggers graph-sync for skills (Mongo + Neo4j stay in sync)
  */
 async function updateOwnProfile(userId, rawPatch) {
   const patch = {};
@@ -284,6 +290,30 @@ async function updateOwnProfile(userId, rawPatch) {
     }
   }
 
+  if ('profile_visibility' in patch) {
+    if (!patch.profile_visibility || typeof patch.profile_visibility !== 'object') {
+      errors.profile_visibility = 'profile_visibility must be an object.';
+    } else {
+      patch.profile_visibility = normalizeVisibility(patch.profile_visibility);
+    }
+  }
+
+  if ('org_name' in patch) {
+    if (typeof patch.org_name !== 'string' || !patch.org_name.trim()) {
+      errors.org_name = 'Organization name is required.';
+    } else {
+      patch.org_name = patch.org_name.trim();
+    }
+  }
+
+  if ('website' in patch) {
+    const url = String(patch.website || '').trim();
+    if (url && !/^https?:\/\/.+/i.test(url)) {
+      errors.website = 'Must be a valid URL starting with http(s)://';
+    }
+    patch.website = url;
+  }
+
   if (Object.keys(errors).length > 0) {
     const e = new Error('Validation failed');
     e.code = 'VALIDATION';
@@ -292,25 +322,19 @@ async function updateOwnProfile(userId, rawPatch) {
   }
 
   if (Object.keys(patch).length === 0) {
-    // Nothing to update; return current profile
     return getOwnProfile(userId);
   }
 
-  // === Apply ===
   await db().collection('users').updateOne(
     { _id: userId },
     { $set: patch }
   );
 
-  // Sync skills to Neo4j if they changed.
   if ('skills' in patch) {
     try {
       await graphSync.syncUserSkills(userId, patch.skills);
     } catch (err) {
       console.error('graph-sync.syncUserSkills failed:', err.message);
-      // Don't roll back the Mongo write — graph sync is recoverable
-      // by re-running the seed or a manual sync; data integrity in
-      // Mongo is more important than transient Neo4j drift.
     }
   }
 
@@ -323,4 +347,5 @@ module.exports = {
   getUserProfile,
   getOwnProfile,
   updateOwnProfile,
+  DEFAULT_VISIBILITY,
 };

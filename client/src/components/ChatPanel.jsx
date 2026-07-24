@@ -16,7 +16,7 @@ import api from '../api/client';
 
 const POLL_INTERVAL_MS = 2000;
 
-export default function ChatPanel({ teamId, myUserId, members = [] }) {
+export default function ChatPanel({ teamId, myUserId, members = [], autoFocus = false }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -26,6 +26,7 @@ export default function ChatPanel({ teamId, myUserId, members = [] }) {
   // Track stream IDs we've seen so polling never duplicates.
   const seenIds = useRef(new Set());
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
 
   // username lookup: id -> username, with fallback
   const userMap = useMemo(() => {
@@ -56,9 +57,17 @@ export default function ChatPanel({ teamId, myUserId, members = [] }) {
 
     let cancelled = false;
     api.get(`/teams/${teamId}/messages`)
-      .then(data => {
+      .then(async data => {
         if (cancelled) return;
         mergeNew(data);
+        const last = data?.length ? data[data.length - 1].id : null;
+        try {
+          await api.post('/notifications/chat-read', {
+            channelType: 'team',
+            teamId,
+            streamId: last,
+          });
+        } catch { /* ignore */ }
       })
       .catch(err => {
         if (cancelled) return;
@@ -71,6 +80,17 @@ export default function ChatPanel({ teamId, myUserId, members = [] }) {
 
     return () => { cancelled = true; };
   }, [teamId]);
+
+  // Advance read cursor when new messages arrive while viewing.
+  useEffect(() => {
+    if (forbidden || messages.length === 0) return;
+    const lastId = messages[messages.length - 1].id;
+    api.post('/notifications/chat-read', {
+      channelType: 'team',
+      teamId,
+      streamId: lastId,
+    }).catch(() => {});
+  }, [teamId, messages, forbidden]);
 
   // Poll for new messages every POLL_INTERVAL_MS, skipping while
   // the tab is hidden OR the user has signed out (token cleared).
@@ -102,6 +122,12 @@ export default function ChatPanel({ teamId, myUserId, members = [] }) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages.length]);
+
+  useEffect(() => {
+    if (autoFocus && !forbidden && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [autoFocus, forbidden, teamId]);
 
   async function handleSend() {
     const body = input.trim();
@@ -202,6 +228,7 @@ export default function ChatPanel({ teamId, myUserId, members = [] }) {
       <div className="px-3 py-3 border-t border-slate-200">
         <div className="flex gap-2">
           <input
+            ref={inputRef}
             type="text"
             value={input}
             onChange={e => setInput(e.target.value)}

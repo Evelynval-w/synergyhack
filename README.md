@@ -1,14 +1,26 @@
 # SynergyHack
 
-A teammate-matching app for hackathon participants, built for EPITA's Database Systems course. Finds collaborators who **complement** your team's skills rather than duplicating them.
+A multi-tenant hackathon **event platform** built for EPITA's Database Systems course. Organizations host public or private events; individuals register, form teams, invite collaborators, chat, and compete on leaderboards. The matching engine finds teammates who **complement** your skills rather than duplicating them.
 
 Built on three databases that each do a job the others cannot do well:
 
-- **MongoDB** for profile content, team data, and analytical aggregations
+- **MongoDB** for profiles, teams, events, registrations, leaderboards, notifications, and analytical aggregations
 - **Neo4j** for the skill-complementarity graph and the matching algorithm
 - **Redis** for sessions, presence, and real-time chat via Streams
 
 For the full design rationale, see [REPORT.md](./REPORT.md). For the architecture diagrams and per-database schemas, see [docs/](./docs/).
+
+---
+
+## Platform overview
+
+Two account types share one `users` collection (`account_type: individual | organization`):
+
+- **Individuals** — build a skill profile, join or create teams tied to an event, request to join or accept outbound invites, register for events (solo or as a team), and use team chat / DMs.
+- **Organizations** — create and edit events (stored in the existing `hackathons` collection), set visibility and registration mode (`individual` / `team` / `both`), approve private registrations, invite users to register, and update the event leaderboard when enabled.
+- **In-app notifications** — team invites, event invites, registration updates, and unread team chat rows in the nav. Chat deep-links go to `/teams/:id?chat=1`. There is no email delivery.
+
+After sign-in, **Events** is the home for browsing open hackathons; orgs create and manage events from the same page.
 
 ---
 
@@ -38,7 +50,24 @@ To stop everything: `docker compose down`. To reset Mongo and Redis volumes too:
 
 ### Demo accounts
 
-Every seeded user signs in with the password **`password123`**. Try `makuo`, `aadithya`, `chris`, `noah`, `lina_dev`, or any other seeded username (50 in total). You can also create a fresh account from the landing page.
+Every seeded user signs in with the password **`password123`**. Try `makuo`, `aadithya`, `chris`, `noah`, `lina_dev`, or any other seeded username (50 in total). Organization host demo: **`synergy_org`** (same password) — open **Events** to create hackathons, approve private registrations, and edit leaderboards. You can also create a fresh **individual** or **organization** account from the landing page, or sign in with Google / GitHub once OAuth credentials are set in `.env`.
+
+### Optional: Google / GitHub SSO
+
+1. Create OAuth apps and set the redirect URIs to:
+   - `http://localhost:8080/api/auth/google/callback`
+   - `http://localhost:8080/api/auth/github/callback`
+2. Copy client id/secret into `.env` (see `.env.example`). Keep:
+   - `OAUTH_CALLBACK_BASE_URL=http://localhost:8080/api`
+   - `CLIENT_ORIGIN=http://localhost:8080`
+3. Recreate the stack so the server picks up the vars:
+   ```bash
+   docker compose up -d --force-recreate --build
+   ```
+4. Open `http://localhost:8080` and click **GitHub** (or Google). No demo seed is required for SSO — the first successful login creates your user in Mongo.
+5. If you previously had a stale browser session ("Invalid token" on Teams), hard-refresh once; the app now clears bad JWTs automatically. After changing `JWT_SECRET`, sign in again.
+
+Landing only shows SSO buttons for providers that are actually configured.
 
 ---
 
@@ -80,25 +109,27 @@ No ORM. Each database is accessed via its native driver from a dedicated service
 
 The browser only ever talks to one origin (`http://localhost:8080`). Nginx routes `/api/*` to the Express server and serves everything else as static SPA assets. No CORS headaches, no separate API URL to configure.
 
-For sequence diagrams of the four key flows (login, match, chat, inbox) and the per-database role breakdown, see [docs/architecture.md](./docs/architecture.md).
+Express serves auth, event CRUD/registration/leaderboard, teams, matching, chat, DMs, and notifications. For sequence diagrams of the core flows (login, match, chat, inbox) and the per-database role breakdown, see [docs/architecture.md](./docs/architecture.md).
 
 ---
 
 ## Features
 
-**Auth.** Real bcrypt-backed register and login. Sessions stored in Redis with 24-hour TTL.
+**Auth.** Real bcrypt-backed register and login for individuals and organizations (`account_type`). Sessions stored in Redis with 24-hour TTL. SSO (Google / GitHub) creates individual accounts.
 
-**People discovery.** Browse all users alphabetically or full-text search across skill names, role, and bio (compound text index in Mongo with weighted fields). Click into anyone's profile to see their skills with level/years and their past hackathon projects.
+**Events.** Organizations create public or private hackathon events (same `hackathons` collection teams already use). Registration mode is `individual`, `team`, or `both`. Public events accept registrations immediately; private events require a valid invite token or org approval (`pending` → `accepted` / `rejected`). Hosts list registrations and can update a leaderboard when `leaderboardEnabled` is set.
 
-**Profile editor.** Edit your bio, role, GitHub URL, email, and skills. Skill changes diff-and-apply against Neo4j: removed skills drop their `HAS_SKILL` edges, new ones get added, level/years on unchanged skills get updated. Mongo is the source of truth; Neo4j stays in sync via the single `graph-sync` boundary.
+**People discovery.** Browse all users alphabetically or full-text search across **username**, skill names, role, and bio (compound text index in Mongo with weighted fields). Click into anyone's profile to see their skills with level/years and their past hackathon projects.
 
-**Teams.** Browse teams or search by name and project pitch. Each team has a hackathon, a description, capacity, and a member roster.
+**Profile editor.** Individuals edit bio, role, GitHub URL, email, and skills; organizations edit name, website, and bio. Skill changes diff-and-apply against Neo4j: removed skills drop their `HAS_SKILL` edges, new ones get added, level/years on unchanged skills get updated. Mongo is the source of truth; Neo4j stays in sync via the single `graph-sync` boundary.
 
-**Matching.** A team's owner clicks "Find teammates" and sees a ranked list of candidates whose skills complement what the team is missing. The ranking is a Cypher path traversal: from the team's existing skills, follow `COMPLEMENTS` edges (with weights) to candidate skills, sum, and rank.
+**Teams.** Browse teams or search by name and project pitch. Each team has a hackathon event, a description, capacity, and a member roster.
 
-**Join requests.** A non-member can request to join a team with an optional message. The team's owner sees the request inline on the team page with the requester's profile preview, and can accept (which adds them to Mongo + creates the Neo4j edge) or reject (which keeps an audit record). The partial unique index prevents duplicate pending requests but allows re-requesting after rejection.
+**Matching.** A team member clicks "Find teammates" and sees a ranked list of candidates whose skills complement what the team is missing. Primary action: **Invite to team** (outbound invite). Ranking is a Cypher path traversal: from the team's existing skills, follow `COMPLEMENTS` edges (with weights) to candidate skills, sum, and rank.
 
-**Chat.** Each team has a live chat backed by Redis Streams (capped at 500 messages with `MAXLEN ~`). 1:1 DMs use a sorted-key channel pattern (`chat:dm:{sortedA}:{sortedB}`) so both participants read and write to the same stream. Every message is mirrored to a Mongo `messages` collection for durable archival and cross-channel queries (the inbox).
+**Join requests & invites.** Non-members can request to join (inbound). Members can invite candidates from Matches (outbound). Invitees accept/reject on the team page. Accept adds them to Mongo + creates the Neo4j `MEMBER_OF` edge. A partial unique index prevents duplicate pending requests.
+
+**Chat.** Each team has a live chat backed by Redis Streams (capped at 500 messages with `MAXLEN ~`). Unread team channels appear in the nav banner and deep-link to `/teams/:id?chat=1`. 1:1 DMs use a sorted-key channel pattern (`chat:dm:{sortedA}:{sortedB}`) so both participants read and write to the same stream. Every message is mirrored to a Mongo `messages` collection for durable archival and cross-channel queries (the inbox).
 
 **Analytics.** Two MongoDB aggregation pipelines on `past_projects`:
 - `GET /analytics/skill-demand` returns the top 5 skills demanded for each role across past hackathon projects
@@ -112,7 +143,7 @@ Auth:
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/api/auth/register` | New account: username, email, password, role |
+| POST | `/api/auth/register` | New account: individual or organization (`account_type`) |
 | POST | `/api/auth/login` | bcrypt-verified login |
 | POST | `/api/auth/logout` | Invalidate session |
 
@@ -121,10 +152,25 @@ Users:
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/api/users` | Paginated browse |
-| GET | `/api/users/search?q=` | Full-text search |
+| GET | `/api/users/search?q=` | Full-text search (includes username) |
 | GET | `/api/users/me` | Own profile (includes email) |
-| PATCH | `/api/users/me` | Update bio, role, email, github_url, skills |
+| PATCH | `/api/users/me` | Update bio, role, email, github_url, skills, org fields |
 | GET | `/api/users/:id` | Public profile |
+
+Events (hackathons collection):
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/hackathons` | List visible events |
+| POST | `/api/hackathons` | Create event (org only) |
+| GET | `/api/hackathons/:id` | Detail + teams + my regs + leaderboard |
+| PATCH | `/api/hackathons/:id` | Update (owning org) |
+| POST | `/api/hackathons/:id/register` | Individual or `{ teamId }` |
+| POST | `/api/hackathons/:id/invite` | Invite user by username |
+| GET | `/api/hackathons/:id/registrations` | Org: list registrations |
+| POST | `/api/hackathons/:id/registrations/:rid/accept` | Org approve or invitee redeem |
+| POST | `/api/hackathons/:id/registrations/:rid/reject` | Org reject |
+| GET/PUT | `/api/hackathons/:id/leaderboard` | Read / org update scores |
 
 Teams:
 
@@ -139,6 +185,9 @@ Teams:
 | GET | `/api/teams/:id/requests` | List pending (owner only) |
 | POST | `/api/teams/:id/requests/:rid/accept` | Accept (owner only) |
 | POST | `/api/teams/:id/requests/:rid/reject` | Reject (owner only) |
+| POST | `/api/teams/:id/invites` | Outbound invite (any member) |
+| POST | `/api/teams/:id/invites/:rid/accept` | Invitee accepts |
+| POST | `/api/teams/:id/invites/:rid/reject` | Invitee declines |
 
 DMs and miscellaneous:
 
@@ -163,8 +212,8 @@ synergyhack/
 ├── client/                  # React SPA
 │   ├── src/
 │   │   ├── api/client.js    # Centralized fetch + auth header injection
-│   │   ├── components/      # Reusable UI (ChatPanel, SkillEditor, etc.)
-│   │   ├── pages/           # Routed pages (Teams, People, Profile, ...)
+│   │   ├── components/      # Reusable UI (ChatPanel, SkillEditor, Layout, ...)
+│   │   ├── pages/           # Teams, Events (EventList/EventDetail), People, Profile, ...
 │   │   ├── hooks/           # useAuth (read-only event subscriber)
 │   │   └── App.jsx
 │   ├── nginx.conf           # /api reverse proxy + SPA fallback
@@ -172,15 +221,15 @@ synergyhack/
 ├── server/                  # Express API
 │   ├── src/
 │   │   ├── routes/          # Express routers, one per resource
-│   │   ├── services/        # All DB access lives here
-│   │   ├── middleware/      # auth (JWT), rateLimit (Redis-backed)
-│   │   ├── db/              # mongo.js, neo4j.js, redis.js connectors
+│   │   ├── services/        # All DB access lives here (events, registration, ...)
+│   │   ├── middleware/      # auth (JWT + requireOrg), rateLimit (Redis-backed)
+│   │   ├── db/              # mongo.js, neo4j.js, redis.js, ensureIndexes.js
 │   │   └── data/            # Skill catalogue + complement-pair seeds
 │   └── Dockerfile
 ├── scripts/
-│   ├── seed-mongo.js        # 5 collections + 13 indexes
+│   ├── seed-mongo.js        # Users/orgs/teams/events + indexes; wipes regs/leaderboard
 │   ├── seed-neo4j.js        # All graph nodes + relationships
-│   └── fixtures/            # JSON seed data (50 users, 10 teams, ...)
+│   └── fixtures/            # users.json, orgs.json, hackathons.json (event fields), ...
 ├── docs/
 │   ├── architecture.md      # System diagrams + sequence flows
 │   ├── neo4j-schema.md      # Graph model
@@ -231,7 +280,7 @@ See `.env.example` for the full list. The defaults work out of the box for the D
 The submission is intentionally scoped. Things explicitly not built:
 
 - **Real-time push.** Chat polls every 2 seconds rather than using WebSockets. Streams support consumer groups for true push, but polling is simpler and fully functional for a demo.
-- **Email notifications.** Join request decisions are visible only when the requester checks the app.
+- **Email notifications.** Team invites, event invites, and join-request decisions are in-app only — visible when the user opens the app.
 - **Fuzzy search.** Mongo's text index does stemming and tokenization but not fuzzy matching ("chrss" won't find "chris"). Atlas Search would solve this.
 - **Mobile responsiveness audit.** The UI is built mobile-first but has not been polished for small screens specifically.
 

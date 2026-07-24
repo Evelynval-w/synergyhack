@@ -3,9 +3,10 @@
 // One candidate card in the matches list.
 // Shows: rank, avatar, name, role, bio, skill chips, and gap coverage bar.
 
+import { Link } from 'react-router-dom';
 import SkillChip from './SkillChip';
 
-export default function MatchCard({ match, rank, onExplain }) {
+export default function MatchCard({ match, rank, onExplain, onInvite, inviting, inviteDone }) {
   const profile = match.profile;
   const initial = match.username[0].toUpperCase();
   const barWidth = Math.min(100, match.gapCoverage * 25);
@@ -19,7 +20,12 @@ export default function MatchCard({ match, rank, onExplain }) {
           {initial}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-slate-900 capitalize">{match.username}</h3>
+          <Link
+            to={`/users/${match.userId}`}
+            className="font-semibold text-slate-900 capitalize hover:text-emerald-700"
+          >
+            {match.username}
+          </Link>
           {profile?.role && (
             <p className="text-sm text-slate-500">{profile.role}</p>
           )}
@@ -56,13 +62,25 @@ export default function MatchCard({ match, rank, onExplain }) {
         </div>
       </div>
 
-      {/* Explain button */}
-      <button
-        onClick={() => onExplain(match)}
-        className="text-xs text-emerald-700 hover:text-emerald-900 font-medium"
-      >
-        Why this match? →
-      </button>
+      <div className="flex items-center gap-3 flex-wrap">
+        {onInvite && (
+          <button
+            type="button"
+            disabled={inviting || inviteDone}
+            onClick={() => onInvite(match)}
+            className="text-xs font-medium bg-emerald-500 text-white px-3 py-1.5 rounded-md hover:bg-emerald-600 disabled:bg-slate-300 disabled:cursor-not-allowed"
+          >
+            {inviteDone ? 'Invited' : inviting ? 'Inviting...' : 'Invite to team'}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => onExplain(match)}
+          className="text-xs text-emerald-700 hover:text-emerald-900 font-medium"
+        >
+          Why this match? →
+        </button>
+      </div>
     </div>
   );
 }

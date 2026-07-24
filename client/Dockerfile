@@ -14,7 +14,7 @@ WORKDIR /app
 
 # Install dependencies (cached unless package files change)
 COPY package*.json ./
-RUN npm ci
+RUN npm ci || npm install
 
 # Copy source and build. Vite outputs to /app/dist
 COPY . .
